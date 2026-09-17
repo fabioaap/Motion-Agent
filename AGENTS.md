@@ -2,6 +2,16 @@
 
 This repository implements the `@motion` Motion Director runtime.
 
+## Package manager
+
+Use pnpm for dependency management and project scripts.
+
+Do not use npm or npx unless a third party tool explicitly requires them and no pnpm compatible invocation exists.
+
+Use `pnpm dlx` for one off package execution.
+
+The repository version is declared in `package.json` through `packageManager`.
+
 ## Entrypoint
 
 Treat user messages beginning with `@motion` as Motion Director requests.
@@ -32,10 +42,18 @@ Never replace an original icon with a visually similar icon from another library
 Install or refresh the official Remotion skills with:
 
 ```bash
-npm run skills:remotion
+pnpm skills:remotion
 ```
 
-The upstream source is `remotion-dev/skills`.
+The installer uses `pnpm dlx skills add remotion-dev/skills`.
+
+The upstream source is `remotion-dev/skills` and is also tracked as the `vendor/remotion-skills` submodule.
+
+## Workspace direction
+
+The root `pnpm-workspace.yaml` reserves `apps/*` and `packages/*` for the project evolution.
+
+Prefer reusable runtime code inside packages and executable surfaces inside apps as the repository grows.
 
 ## Preserve user changes
 
