@@ -5,6 +5,7 @@ import {
   type JobContext
 } from "./contracts.js";
 import { MotionOrchestrator } from "./orchestrator.js";
+import {createPreviewJob, type MotionPreviewJob} from "./preview.js";
 
 export const MotionAttachmentSchema = z.object({
   name: z.string().min(1),
@@ -29,6 +30,11 @@ export type ParseMotionCommandOptions = {
   attachments?: MotionAttachment[];
   jobId?: string;
   sceneId?: string;
+};
+
+export type MotionInvocationResult = {
+  context: JobContext;
+  preview: MotionPreviewJob;
 };
 
 /**
@@ -143,5 +149,16 @@ export class MotionCommandGateway {
 
     const initial = createInitialContextFromCommand(command);
     return this.orchestrator.run(initial);
+  }
+
+  async invokeWithPreview(
+    input: string,
+    options: ParseMotionCommandOptions = {}
+  ): Promise<MotionInvocationResult> {
+    const context = await this.invoke(input, options);
+    return {
+      context,
+      preview: createPreviewJob(context)
+    };
   }
 }
