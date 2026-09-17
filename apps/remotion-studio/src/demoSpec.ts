@@ -1,4 +1,4 @@
-import {MotionSpecSchema} from "@motion-agent/runtime";
+import {MotionSpecSchema} from "@motion-agent/runtime/contracts";
 
 export const demoMotionSpec = MotionSpecSchema.parse({
   job_id: "motion_agent_preview",
