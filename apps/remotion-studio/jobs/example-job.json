@@ -1,0 +1,40 @@
+{
+  "jobId": "motion_example_001",
+  "title": "Insight detectado. Motion validado.",
+  "objective": "Exemplo de preview parametrizada produzida a partir de um job do grafo do @motion.",
+  "command": "@motion --auto",
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "durationFrames": 165,
+  "stages": [
+    {
+      "id": "asset_audit",
+      "label": "Asset Audit",
+      "detail": "Originais localizados e preservados",
+      "startFrame": 8,
+      "status": "approved"
+    },
+    {
+      "id": "motion_direction",
+      "label": "Motion Direction",
+      "detail": "Causa, efeito, ritmo e hierarquia definidos",
+      "startFrame": 38,
+      "status": "approved"
+    },
+    {
+      "id": "qa_loop",
+      "label": "QA Loop",
+      "detail": "Fidelidade, motion e técnica revisados",
+      "startFrame": 72,
+      "status": "approved"
+    },
+    {
+      "id": "ready",
+      "label": "Ready for Human",
+      "detail": "Preview pronta para decisão criativa",
+      "startFrame": 116,
+      "status": "approved"
+    }
+  ]
+}
