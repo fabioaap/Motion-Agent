@@ -1,11 +1,13 @@
 import React from "react";
 import {Composition, type CalculateMetadataFunction} from "remotion";
+import type {MotionSceneJob} from "@motion-agent/runtime";
 import {demoMotionSpec} from "./demoSpec";
 import {MotionAgentDemo} from "./MotionAgentDemo";
 import {
   MotionJobPreview,
   type MotionJobPreviewProps
 } from "./MotionJobPreview";
+import {MotionScene} from "./MotionScene";
 
 const defaultJobProps: MotionJobPreviewProps = {
   jobId: "motion_default",
@@ -48,7 +50,49 @@ const defaultJobProps: MotionJobPreviewProps = {
   ]
 };
 
+const defaultSceneProps: MotionSceneJob = {
+  jobId: "motion_scene_demo",
+  sceneId: "scene_01",
+  title: "Dashboard com motion preservando o asset original",
+  objective: "Demonstrar o caminho real do @motion com um SVG original.",
+  fps: 30,
+  width: 1920,
+  height: 1080,
+  durationFrames: 150,
+  background: "#070B14",
+  presentation: "FULL_FRAME",
+  showTitle: false,
+  layers: [
+    {
+      elementId: "dashboard",
+      assetId: "dashboard_asset",
+      name: "dashboard.svg",
+      type: "SVG",
+      source: "demo/dashboard.svg",
+      strategy: "REUSE_SVG",
+      fidelityRequirement: "STRICT",
+      startFrame: 0,
+      endFrame: 149,
+      motionFamily: "PanZoom",
+      fit: "contain",
+      x: 0.5,
+      y: 0.5,
+      width: 0.94,
+      height: 0.92,
+      zIndex: 1,
+      originalAsset: true
+    }
+  ]
+};
+
 const calculateJobMetadata: CalculateMetadataFunction<MotionJobPreviewProps> = ({props}) => ({
+  durationInFrames: props.durationFrames,
+  fps: props.fps,
+  width: props.width,
+  height: props.height
+});
+
+const calculateSceneMetadata: CalculateMetadataFunction<MotionSceneJob> = ({props}) => ({
   durationInFrames: props.durationFrames,
   fps: props.fps,
   width: props.width,
@@ -75,6 +119,16 @@ export const RemotionRoot: React.FC = () => {
         height={defaultJobProps.height}
         defaultProps={defaultJobProps}
         calculateMetadata={calculateJobMetadata}
+      />
+      <Composition
+        id="MotionScene"
+        component={MotionScene}
+        durationInFrames={defaultSceneProps.durationFrames}
+        fps={defaultSceneProps.fps}
+        width={defaultSceneProps.width}
+        height={defaultSceneProps.height}
+        defaultProps={defaultSceneProps}
+        calculateMetadata={calculateSceneMetadata}
       />
     </>
   );
