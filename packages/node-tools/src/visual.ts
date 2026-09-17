@@ -255,6 +255,7 @@ export function createRemotionPreviewHook(options: RemotionPreviewHookOptions = 
       const next = structuredClone(context);
       next.metadata = {
         ...next.metadata,
+        asset_preview_paths: motionKeyframes.slice(0, 3).map((item) => item.path),
         preview_render: {ok: true, actual_path: actualPng, reference_path: referencePng},
         visual_qa: {
           diff_ratio: diff.diffRatio,
