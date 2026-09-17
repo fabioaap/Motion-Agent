@@ -26,17 +26,43 @@ Critérios formais para READY_FOR_HUMAN.
 
 Gate de aprovação humana antes do render final.
 
-## Instalação
+## Package manager
+
+O package manager oficial do projeto é pnpm.
+
+A versão fica fixada no campo `packageManager` do `package.json` para manter o ambiente reproduzível.
+
+O repositório já possui `pnpm-workspace.yaml` e está preparado para evoluir para um monorepo com `apps/*` e `packages/*`.
+
+Para ativar a versão declarada no projeto com Corepack:
 
 ```bash
-npm install
+corepack enable
+corepack prepare pnpm@12.4.2 --activate
+```
+
+## Instalação
+
+Clone incluindo o submódulo das skills oficiais do Remotion:
+
+```bash
+git clone --recurse-submodules https://github.com/fabioaap/Motion-Agent.git
+cd Motion-Agent
+pnpm install
+```
+
+Se o repositório já estiver clonado:
+
+```bash
+git submodule update --init --recursive
+pnpm install
 ```
 
 ## Validação
 
 ```bash
-npm run typecheck
-npm run demo
+pnpm typecheck
+pnpm demo
 ```
 
 ## Integração real
@@ -58,6 +84,8 @@ Implementar comparação visual por screenshots, overlay e pixel diff.
 Adicionar ingestão de Figma e Design System.
 
 Adicionar biblioteca persistente do Motion Design System.
+
+Separar gradualmente o runtime em packages e as superfícies executáveis em apps conforme o projeto crescer.
 
 ## Comando oficial `@motion`
 
@@ -127,12 +155,14 @@ O repositório combina duas camadas de skills.
 
 As skills próprias ficam em `skills/custom` e controlam orquestração, direção de cena, fidelidade de assets e QA.
 
-As skills oficiais do Remotion são mantidas no upstream `remotion-dev/skills` e podem ser instaladas com:
+As skills oficiais do Remotion ficam rastreadas no submódulo `vendor/remotion-skills` e também podem ser instaladas ou atualizadas no ambiente do agente com:
 
 ```bash
-npm run skills:remotion
+pnpm skills:remotion
 ```
+
+Esse script usa `pnpm dlx skills add remotion-dev/skills`.
 
 O arquivo `AGENTS.md` orienta agentes de código a carregar primeiro a skill de orquestração do Motion Agent e depois as skills oficiais específicas do Remotion necessárias para a tarefa.
 
-A decisão de manter as skills oficiais sincronizadas a partir do upstream evita congelar uma cópia antiga dentro do repositório.
+A fonte oficial continua sendo `remotion-dev/skills`, evitando manter uma cópia privada e desatualizada.
