@@ -6,7 +6,7 @@ import {
   useCurrentFrame,
   useVideoConfig
 } from "remotion";
-import {demoMotionSpec} from "./demoSpec.js";
+import {demoMotionSpec} from "./demoSpec";
 
 const stages = [
   {id: "asset_audit", label: "Asset Audit", detail: "Preserva o original"},
