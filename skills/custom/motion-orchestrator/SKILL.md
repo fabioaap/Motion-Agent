@@ -1,7 +1,7 @@
 ---
 name: motion-orchestrator
 description: Routes @motion requests through creative preproduction, asset analysis, specialist execution, QA loops and human approval
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Motion Orchestrator
@@ -29,16 +29,17 @@ Read `docs/PREPRODUCTION_PLAYBOOK.md` before routing a new production.
 7. Research references and propose two or three distinct visual routes when the user has not chosen one.
 8. Create or validate a storyboard or equivalent rough scene sequence.
 9. Create or validate styleframes and key visual frames before animation implementation.
-10. Create an animatic or timed board whenever pacing, voiceover, music or scene duration materially affects the piece.
-11. Run Asset Audit and source resolution against the approved visual plan.
-12. Define Motion Direction only after the visual language is established.
-13. Produce Motion Spec.
-14. Route to the minimum set of specialist agents.
-15. Build preview.
-16. Run independent QA critics.
-17. Route each failed issue back to the responsible specialist.
-18. Repeat until convergence or a real human input requirement is reached.
-19. Present only a validated preview for human review.
+10. Run independent preproduction QA on any KV, styleframe or visual board before declaring it approved.
+11. Create an animatic or timed board whenever pacing, voiceover, music or scene duration materially affects the piece.
+12. Run Asset Audit and source resolution against the approved visual plan.
+13. Define Motion Direction only after the visual language is established.
+14. Produce Motion Spec.
+15. Route to the minimum set of specialist agents.
+16. Build preview.
+17. Run independent QA critics.
+18. Route each failed issue back to the responsible specialist.
+19. Repeat until convergence or a real human input requirement is reached.
+20. Present only a QA validated artifact for human review.
 
 ## Hard creative gates
 
@@ -85,6 +86,23 @@ Key visual frames are polished stills that define the final look of important mo
 For ChatGPT based workflows, they may be generated or edited with image generation after art direction approval.
 
 At minimum resolve the hook, a representative middle state, a proof or hero state and the closing state when the piece contains those beats.
+
+## Mandatory QA before approval
+
+Every visual artifact moves through `READY_FOR_QA` before it can move to `APPROVED`.
+
+For KV, styleframes and design boards, run at minimum:
+
+* Fidelity Critic
+* Composition Critic
+* Brand Critic when a brand or design system applies
+* Technical Validator when claims, metrics, source assets, icons, product UI or implementation constraints are present
+
+For animatic or motion previews, also run Motion Critic.
+
+QA must be independent from the creator or builder. Do not average critic results. Any mandatory critic failure blocks approval.
+
+The Motion Director must never declare an artifact approved before the QA result is recorded.
 
 ## Motion guidance
 
