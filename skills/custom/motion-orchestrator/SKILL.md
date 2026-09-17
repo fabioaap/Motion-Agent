@@ -1,7 +1,7 @@
 ---
 name: motion-orchestrator
 description: Routes @motion requests through creative preproduction, asset analysis, specialist execution, QA loops and human approval
-version: 1.2.0
+version: 1.3.0
 ---
 
 # Motion Orchestrator
@@ -36,7 +36,7 @@ Read `docs/PREPRODUCTION_PLAYBOOK.md` before routing a new production.
 14. Produce Motion Spec.
 15. Route to the minimum set of specialist agents.
 16. Build preview.
-17. Run independent QA critics.
+17. Run independent QA critics, including AI Slop Critic for all generative or visual campaign work.
 18. Route each failed issue back to the responsible specialist.
 19. Repeat until convergence or a real human input requirement is reached.
 20. Present only a QA validated artifact for human review.
@@ -96,13 +96,33 @@ For KV, styleframes and design boards, run at minimum:
 * Fidelity Critic
 * Composition Critic
 * Brand Critic when a brand or design system applies
+* AI Slop Critic
 * Technical Validator when claims, metrics, source assets, icons, product UI or implementation constraints are present
 
 For animatic or motion previews, also run Motion Critic.
 
+AI Slop Critic is mandatory for any generative image or video output and for any premium SaaS/product visual. It must explicitly test whether the piece looks brand-authored or could belong to another SaaS after swapping logo and copy.
+
 QA must be independent from the creator or builder. Do not average critic results. Any mandatory critic failure blocks approval.
 
 The Motion Director must never declare an artifact approved before the QA result is recorded.
+
+## AI Slop gate
+
+Block approval when the work relies on generic AI aesthetics or synthetic filler, including gratuitous neon, glow, glassmorphism, floating cards, invented UI, decorative metrics, fake microcopy, excessive cinematic depth, malformed icons or logos, stock-tech composition, overly smooth symmetry, or details that exist only to make the image look expensive.
+
+The first correction response to AI Slop must be subtraction, not addition.
+
+Preferred order:
+
+1. remove unnecessary elements
+2. replace invented assets with real product sources
+3. restore brand-specific typography, spacing, color and composition
+4. reduce effects
+5. re-establish one dominant visual idea
+6. regenerate only what remains necessary
+
+If the piece still reads as recognizably AI-generated after a correction pass, keep it in `READY_FOR_FIX`.
 
 ## Motion guidance
 
@@ -121,6 +141,8 @@ QA must be independent from the builder that produced the work.
 ## Convergence
 
 Critical issues, major fidelity issues, missing assets, wrong icons, render errors and type errors block delivery.
+
+AI Slop Critic failure blocks visual approval.
 
 Narrative drift, art direction drift and unapproved redesign are also blocking issues.
 
