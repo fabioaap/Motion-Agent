@@ -62,6 +62,7 @@ const defaultSceneProps: MotionSceneJob = {
   background: "#070B14",
   presentation: "FULL_FRAME",
   showTitle: false,
+  qaStatic: false,
   layers: [
     {
       elementId: "dashboard",
