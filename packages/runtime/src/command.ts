@@ -6,6 +6,7 @@ import {
 } from "./contracts.js";
 import { MotionOrchestrator } from "./orchestrator.js";
 import {createPreviewJob, type MotionPreviewJob} from "./preview.js";
+import {createSceneJob, type MotionSceneJob} from "./scene.js";
 
 export const MotionAttachmentSchema = z.object({
   name: z.string().min(1),
@@ -35,6 +36,10 @@ export type ParseMotionCommandOptions = {
 export type MotionInvocationResult = {
   context: JobContext;
   preview: MotionPreviewJob;
+};
+
+export type MotionSceneInvocationResult = MotionInvocationResult & {
+  scene: MotionSceneJob;
 };
 
 /**
@@ -159,6 +164,18 @@ export class MotionCommandGateway {
     return {
       context,
       preview: createPreviewJob(context)
+    };
+  }
+
+  async invokeWithScene(
+    input: string,
+    options: ParseMotionCommandOptions = {}
+  ): Promise<MotionSceneInvocationResult> {
+    const context = await this.invoke(input, options);
+    return {
+      context,
+      preview: createPreviewJob(context),
+      scene: createSceneJob(context)
     };
   }
 }
