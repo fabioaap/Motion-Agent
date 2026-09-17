@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import {
   JobContextSchema,
@@ -42,6 +41,12 @@ export type MotionSceneInvocationResult = MotionInvocationResult & {
   scene: MotionSceneJob;
 };
 
+function createJobId(): string {
+  const time = Date.now().toString(36);
+  const random = Math.random().toString(36).slice(2, 10);
+  return `motion_${time}_${random}`;
+}
+
 /**
  * Accepted forms:
  *
@@ -75,7 +80,7 @@ export function parseMotionCommand(
     request: remainder,
     mode,
     attachments: options.attachments ?? [],
-    job_id: options.jobId ?? `motion_${randomUUID()}`,
+    job_id: options.jobId ?? createJobId(),
     scene_id: options.sceneId ?? "scene_01"
   });
 }
