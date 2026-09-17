@@ -8,4 +8,5 @@ export * from "./agents.js";
 export * from "./orchestrator.js";
 export * from "./graph.js";
 export * from "./preview.js";
+export * from "./scene.js";
 export * from "./command.js";
