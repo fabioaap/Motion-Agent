@@ -21,6 +21,7 @@ jobs:
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm tools:smoke
+      - run: pnpm --filter @motion-agent/node-tools preview-smoke
       - run: pnpm demo
       - run: pnpm demo:command
       - run: pnpm --filter @motion-agent/remotion-studio compositions
@@ -36,4 +37,5 @@ jobs:
             apps/remotion-studio/out/motion-job-preview.mp4
             apps/remotion-studio/out/motion-scene.mp4
             apps/remotion-studio/out/motion-scene-still.png
+            apps/remotion-studio/out/qa/qa_preview_smoke/**/*
           if-no-files-found: error

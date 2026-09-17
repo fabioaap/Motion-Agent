@@ -1,6 +1,6 @@
 {
   "name": "@motion-agent/node-tools",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -9,7 +9,8 @@
   "types": "./src/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "smoke": "tsx examples/smoke.ts"
+    "smoke": "tsx examples/smoke.ts",
+    "preview-smoke": "tsx examples/preview-smoke.ts"
   },
   "dependencies": {
     "@motion-agent/runtime": "workspace:*",
