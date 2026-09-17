@@ -20,15 +20,18 @@ const registry = new AgentRegistry();
 
 for (const name of [
   "director",
+  "context_router",
   "asset_inspector",
+  "source_asset_agent",
+  "decomposition_agent",
   "creative_reference_agent",
   "motion_director",
   "motion_spec_agent",
   "ui_react_specialist",
+  "svg_motion_specialist",
+  "motion_specialist",
   "remotion_specialist",
   "composition_agent",
-  "source_asset_agent",
-  "motion_specialist",
   "brand_system_specialist",
   "regression_checker",
   "render_agent"
