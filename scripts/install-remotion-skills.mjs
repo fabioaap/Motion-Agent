@@ -1,7 +1,7 @@
 import {spawnSync} from 'node:child_process';
 
-const command = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-const result = spawnSync(command, ['skills', 'add', 'remotion-dev/skills'], {
+const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+const result = spawnSync(command, ['dlx', 'skills', 'add', 'remotion-dev/skills'], {
   stdio: 'inherit',
   shell: false,
 });
