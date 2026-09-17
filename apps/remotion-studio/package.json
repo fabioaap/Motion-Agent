@@ -1,6 +1,6 @@
 {
   "name": "@motion-agent/remotion-studio",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,6 +8,7 @@
     "compositions": "remotion compositions src/index.ts",
     "render:demo": "remotion render src/index.ts MotionAgentDemo out/motion-agent-demo.mp4",
     "render:job": "remotion render src/index.ts MotionJobPreview out/motion-job-preview.mp4 --props=jobs/example-job.json",
+    "render:scene": "remotion render src/index.ts MotionScene out/motion-scene.mp4 --props=jobs/scene-job.json",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
