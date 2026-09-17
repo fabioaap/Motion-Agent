@@ -6,10 +6,18 @@ Upstream repository:
 
 `remotion-dev/skills`
 
-Install them with:
+The upstream repository is also tracked as the `vendor/remotion-skills` Git submodule so the exact source revision remains auditable.
+
+Install or refresh the agent skills with:
 
 ```bash
-npm run skills:remotion
+pnpm skills:remotion
+```
+
+The project script executes:
+
+```bash
+pnpm dlx skills add remotion-dev/skills
 ```
 
 The official upstream currently exposes these skills:
@@ -51,3 +59,11 @@ Use `remotion-docs` whenever an API, package behavior or current Remotion recomm
 The repository also contains Studio specific skills under `skills/custom`.
 
 These skills control direction, asset fidelity, QA and the multiagent orchestration layer. They complement the official Remotion skills rather than replacing them.
+
+## Updating the tracked upstream source
+
+```bash
+git submodule update --remote vendor/remotion-skills
+```
+
+Review the upstream changes before committing the updated submodule pointer.
