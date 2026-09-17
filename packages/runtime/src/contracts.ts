@@ -159,7 +159,7 @@ export const TimelineActionSchema = z.object({
   end_frame: z.number().int().nonnegative(),
   action: z.string().min(1),
   motion_family: z.string().min(1),
-  properties: z.record(z.boolean()).default({})
+  properties: z.record(z.string(), z.boolean()).default({})
 }).refine((value) => value.end_frame >= value.start_frame, {
   message: "end_frame must be greater than or equal to start_frame"
 });
@@ -170,7 +170,7 @@ export const MotionSpecSchema = z.object({
   duration_frames: z.number().int().positive(),
   fps: z.number().int().positive(),
   timeline: z.array(TimelineActionSchema),
-  motion_tokens: z.record(z.unknown()).default({}),
+  motion_tokens: z.record(z.string(), z.unknown()).default({}),
   transition_strategy: z.string().default(""),
   reduced_motion_strategy: z.string().default("")
 });
@@ -241,6 +241,6 @@ export const JobContextSchema = z.object({
   qa_reports: z.array(QAReportSchema).default([]),
   open_issues: z.array(QAIssueSchema).default([]),
   locked_elements: z.array(z.string()).default([]),
-  metadata: z.record(z.unknown()).default({})
+  metadata: z.record(z.string(), z.unknown()).default({})
 });
 export type JobContext = z.infer<typeof JobContextSchema>;
