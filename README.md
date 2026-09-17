@@ -1,153 +1,225 @@
 # Motion Agent
 
-Motion Agent is an installable motion-design toolkit for AI coding agents such as Codex.
+Motion Agent installs a reusable **`@motion` motion-design workflow** into an existing product repository so Codex can work with that project's real components, SVGs, fonts, tokens, routes, screenshots and design-system rules.
 
-Its purpose is **not** to be the repository where your product lives. Instead, Motion Agent is installed into another repository so that the agent working in that repository gains an `@motion` workflow, Remotion tooling, motion-design skills, asset-fidelity rules, visual QA and correction loops.
+The Motion-Agent repository is the **distribution source and development repository**. Your product repository remains the place where the actual motion work happens.
 
 ```text
 Motion-Agent
     |
-    | install
+    | pnpm dlx ... init
     v
 Your product repository
     |
-    +-- product source code
-    +-- design system
-    +-- assets
-    +-- Motion Agent tooling
-    +-- Remotion
+    +-- existing source code
+    +-- existing design system
+    +-- existing assets
+    +-- .agents/skills/...      Motion Agent skills
+    +-- .motion/remotion/...    isolated Remotion workspace
+    +-- AGENTS.md               managed @motion instructions
     +-- @motion
 ```
 
-This lets the motion workflow operate with the real context of the product: components, SVGs, fonts, tokens, screenshots, routes and design-system rules.
+## Install in another repository
 
-## Recommended usage
+### From GitHub — available now
 
-The primary mode is **agent-hosted**.
+Open a terminal in the repository where you want `@motion` and run:
 
-You clone or install Motion Agent into the repository where you are working, open that repository in Codex or another compatible coding agent, and use `@motion` there.
+```bash
+pnpm dlx github:fabioaap/Motion-Agent init
+```
 
-In this mode the coding agent is the reasoning layer. Motion Agent provides the production system: skills, orchestration rules, Remotion runtime, asset ingestion, visual QA, regression checks and rendering.
+The installer will:
 
-**An OpenAI API key is not required for this primary mode.**
+1. create the project-local `.motion/` workspace;
+2. install the Motion Agent skills under `.agents/skills/`;
+3. safely merge Motion Agent instructions into `AGENTS.md`;
+4. add Motion Agent generated paths to `.gitignore`;
+5. add convenience motion scripts to an existing `package.json` without replacing existing scripts;
+6. install the isolated Remotion workspace dependencies;
+7. install the official Remotion skills for Codex through the skills CLI.
 
-A separate standalone provider adapter exists for future server-side automation. It is optional and only needed when Motion Agent must call a model by itself without Codex or another host agent running.
+The skills CLI supports project-local Codex installation and non-interactive `--agent codex --copy --yes`, which the installer uses for the official Remotion skills.
+
+### Future npm distribution
+
+The package is structured for a future registry release. After publication, the shorter command will be:
+
+```bash
+pnpm dlx @fabioaap/motion-agent init
+```
+
+Do not use the npm form until that package has actually been published.
 
 ## Requirements
 
 - Node.js 22 or newer
-- pnpm 12.4.2
+- pnpm
 - Git
-- Codex or another compatible coding-agent environment for the recommended agent-hosted workflow
+- Codex for the recommended agent-hosted workflow
 
-Enable pnpm if necessary:
+If pnpm is not enabled yet:
 
 ```bash
 corepack enable
 corepack prepare pnpm@12.4.2 --activate
 ```
 
-## Install today
+## What gets installed
 
-Until the distribution CLI is published, install Motion Agent from source.
+The installer intentionally does **not** copy this entire development repository into your project.
 
-Clone it alongside the repository where you want to use it:
-
-```bash
-git clone https://github.com/fabioaap/Motion-Agent.git
-cd Motion-Agent
-pnpm install
-pnpm skills:remotion
-pnpm typecheck
-```
-
-Then open the target product repository in your coding agent and make the Motion Agent repository available to that workspace while the installer CLI is being finalized.
-
-The intended final installation experience is:
-
-```bash
-cd your-product
-pnpm dlx @fabioaap/motion-agent init
-```
-
-That command is the distribution target for this project. Do not depend on it until the installer package is released.
-
-## What the installer will add
-
-The installer is designed to add only the pieces required by the target repository instead of copying this entire development repository.
-
-The target shape is:
+It creates only the project-facing pieces:
 
 ```text
 your-product/
+  .agents/
+    skills/
+      motion-orchestrator/
+      asset-fidelity/
+      scene-director/
+      motion-qa/
+      ...official Remotion skills...
+
   .motion/
-    config/
-    runtime/
-    prompts/
-    qa/
-  skills/
-    motion-orchestrator/
-    asset-fidelity/
-    scene-director/
-    motion-qa/
-  motion/
+    config.json
+    install-manifest.json
+    README.md
     remotion/
-  AGENTS.md             # Motion Agent instructions merged safely
-  package.json          # Motion scripts/dependencies added safely
+      package.json
+      tsconfig.json
+      src/
+      out/                 # generated, ignored by git
+      jobs/                # generated, ignored by git
+
+  AGENTS.md                # existing content preserved
+  .gitignore               # existing content preserved
+  package.json             # existing content preserved
 ```
 
-Existing project files, components and design-system assets remain the source of truth.
+A manifest records the Motion Agent-owned paths so update and uninstall operations know what they are allowed to change.
 
-## Planned installer commands
+## Installer commands
+
+### Initialize
 
 ```bash
-motion-agent init
-motion-agent update
-motion-agent doctor
-motion-agent uninstall
+pnpm dlx github:fabioaap/Motion-Agent init
 ```
 
-### `init`
+Install into a different directory:
 
-Installs Motion Agent into the current repository, detects the existing stack, configures Remotion, installs the Motion skills and adds the minimum required scripts and agent instructions.
+```bash
+pnpm dlx github:fabioaap/Motion-Agent init --target ../my-product
+```
 
-### `update`
+For CI/testing or a deliberately minimal install, dependency and Remotion-skill installation can be skipped:
 
-Updates Motion Agent-managed files without overwriting product-owned code or user customizations.
+```bash
+pnpm dlx github:fabioaap/Motion-Agent init --skip-install --skip-remotion-skills
+```
 
-### `doctor`
+### Update
 
-Checks Node, pnpm, Remotion, skills, paths, agent instructions and Motion Agent-managed files.
+Re-apply the current Motion Agent managed files and skills while preserving the target repository's Motion Agent config and project-owned content:
 
-### `uninstall`
+```bash
+pnpm dlx github:fabioaap/Motion-Agent update
+```
 
-Removes Motion Agent-managed files while preserving the product repository and user-owned assets.
+### Doctor
+
+Check Node, pnpm, manifest, Remotion workspace, custom skills and `AGENTS.md` integration:
+
+```bash
+pnpm dlx github:fabioaap/Motion-Agent doctor
+```
+
+Run the deeper Remotion typecheck too:
+
+```bash
+pnpm dlx github:fabioaap/Motion-Agent doctor --deep
+```
+
+Machine-readable output:
+
+```bash
+pnpm dlx github:fabioaap/Motion-Agent doctor --json
+```
+
+### Uninstall
+
+Remove Motion Agent-owned project files and managed blocks while preserving the rest of the repository:
+
+```bash
+pnpm dlx github:fabioaap/Motion-Agent uninstall
+```
+
+Official Remotion skills are intentionally left in place during uninstall because another workflow in the repository may also use them.
 
 ## Using `@motion`
 
-Once installed into a product repository, the intended experience is conversational.
+After installation, open the **target product repository** in Codex and work there normally.
+
+For example:
 
 ```text
 @motion anime esse dashboard mostrando que a IA encontrou uma oportunidade
 ```
 
-Because the coding agent is already inside the product repository, it can inspect the actual source material before deciding how to animate it.
+or:
 
-The workflow is expected to prefer, in order:
+```text
+@motion quero uma entrada premium desta tela. Preserve exatamente os componentes e ícones existentes.
+```
 
-1. the exact original asset
-2. the original SVG or source component
-3. existing design-system components and tokens
-4. hybrid composition
-5. validated reconstruction only when necessary
+The managed `AGENTS.md` block tells the host agent to read the Motion Agent orchestrator skill first and to use `.motion/remotion` as the isolated preview/render workspace.
 
-Approximate replacement of a logo, icon, component or other strict asset is not allowed.
+## No API key in the normal Codex workflow
 
-## Production flow
+The default installed mode is:
+
+```text
+mode = codex
+```
+
+Codex is the reasoning layer. Motion Agent provides the workflow, skills, Remotion workspace and QA rules.
+
+**You do not need `OPENAI_API_KEY` for this primary workflow.**
+
+The optional standalone provider adapter in this development repository exists for future unattended execution on a VPS, webhook worker, Trello automation or other environment where no host coding agent is present.
+
+## Convenience commands added to the target project
+
+When the target has a `package.json`, the installer adds these scripts if those names are not already owned by the project:
+
+```bash
+pnpm motion:studio
+pnpm motion:typecheck
+pnpm motion:compositions
+pnpm motion:render
+```
+
+They operate only on the isolated `.motion/remotion` workspace.
+
+## Fidelity rules
+
+The installed workflow prefers, in order:
+
+1. exact original assets;
+2. original SVGs or source components;
+3. existing design-system components and tokens;
+4. hybrid composition;
+5. validated reconstruction only when necessary.
+
+Approximate replacement of strict logos, icons, typefaces, components or UI assets is not allowed.
+
+## Motion workflow
 
 ```text
 @motion
-  -> understand repository context
+  -> inspect repository context
   -> intake
   -> asset audit
   -> source resolution
@@ -158,7 +230,7 @@ Approximate replacement of a logo, icon, component or other strict asset is not 
   -> Remotion build
   -> preview render
   -> multi-frame visual QA
-  -> fidelity / motion / composition / brand / technical critics
+  -> fidelity / motion / composition / brand / technical review
   -> regression guard
   -> correction loop
   -> READY_FOR_HUMAN
@@ -166,47 +238,32 @@ Approximate replacement of a logo, icon, component or other strict asset is not 
   -> final render
 ```
 
-## What is already implemented in this repository
+## Motion-Agent development repository
 
-The development repository currently includes:
-
-- Zod-contracted orchestration runtime
-- formal state machine and specialist graph
-- Remotion scene generation
-- MP4 rendering
-- asset ingestion and SHA-256 metadata
-- exact-source identity checks
-- reference-vs-render pixel diff
-- multi-frame motion QA
-- deterministic regression guard
-- issue routing and retry loops
-- human approval state
-- custom Motion Agent skills
-- official Remotion skills integration
-- optional standalone OpenAI provider adapter
-- CI validation and render smoke tests
-
-## Repository architecture
+The source repository itself contains the more complete development/runtime architecture:
 
 ```text
+bin/
+  motion-agent.mjs       install/update/doctor/uninstall CLI
+
+installer/
+  template/              files injected into target repositories
+  smoke.mjs              installer lifecycle test
+
 apps/
-  motion-cli/            standalone/local execution CLI
-  remotion-studio/       preview and video rendering
+  motion-cli/            optional standalone execution CLI
+  remotion-studio/       development preview/render environment
 
 packages/
   runtime/               graph, contracts, QA and supervisor
-  openai-agents/         optional standalone LLM provider adapter
-  node-tools/            asset ingestion, rendering and visual QA
+  openai-agents/         optional standalone LLM provider
+  node-tools/            ingestion, rendering and visual QA
 
-skills/custom/           Motion Agent skills
-vendor/remotion-skills/  official Remotion skills source
+skills/custom/           project-facing Motion Agent skills
+vendor/remotion-skills/  official Remotion skills source reference
 ```
 
-The `openai-agents` package is **optional infrastructure for standalone automation**. It is not the required reasoning path when Motion Agent is being used through Codex or another host coding agent.
-
-## Development setup
-
-If you are contributing to Motion Agent itself:
+## Contributing to Motion Agent
 
 ```bash
 git clone https://github.com/fabioaap/Motion-Agent.git
@@ -214,11 +271,13 @@ cd Motion-Agent
 corepack enable
 pnpm install
 pnpm typecheck
+pnpm installer:smoke
 ```
 
 Useful development commands:
 
 ```bash
+pnpm installer:smoke
 pnpm tools:smoke
 pnpm demo
 pnpm demo:command
@@ -229,33 +288,19 @@ pnpm skills:remotion
 
 ## Standalone mode
 
-Standalone mode is for future automation such as a VPS, webhook, Trello workflow or background worker where no host coding agent is present.
-
-Only this mode requires an AI provider credential. The existing OpenAI adapter reads:
+Standalone mode is optional infrastructure for unattended automation. Only that mode requires an AI-provider credential. The existing OpenAI adapter can read:
 
 ```text
 OPENAI_API_KEY=...
 MOTION_MODEL=gpt-5.6
 ```
 
-Provider credentials must remain in environment variables or secret stores and must never be committed.
+Never commit provider credentials.
 
-## CI
+## Safety and ownership
 
-The standard CI validates TypeScript, tooling, preview QA, composition discovery and Remotion rendering without making paid LLM calls.
+The installer uses managed blocks and a manifest so it does not take ownership of unrelated project files. Existing `AGENTS.md`, `.gitignore` and package scripts are preserved outside Motion Agent-managed content.
 
-A separate live workflow can exercise the standalone provider when explicitly configured with a secret.
+Generated outputs such as Remotion renders, temporary jobs, caches and installed dependencies are ignored by git by default.
 
-## Security
-
-Never commit API keys, tokens, cookies, private source assets or production credentials.
-
-Generated job assets, QA frames and renders should remain outside version control unless intentionally added as fixtures.
-
-## Project direction
-
-The next distribution milestone is to make Motion Agent a true installer that can be added to an arbitrary repository with one command while preserving that repository's existing architecture.
-
-The product principle is simple:
-
-> Motion Agent installs motion-design capability into the project you already have.
+> **Motion Agent installs motion-design capability into the project you already have.**
