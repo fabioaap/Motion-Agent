@@ -25,7 +25,10 @@ for (const name of [
   "motion_director",
   "motion_spec_agent",
   "remotion_specialist",
+  "ui_react_specialist",
+  "svg_motion_specialist",
   "composition_agent",
+  "source_asset_agent",
   "fidelity_critic",
   "motion_critic",
   "composition_critic",
@@ -56,14 +59,14 @@ const orchestrator = new MotionOrchestrator(registry, {
 });
 const motion = new MotionCommandGateway(orchestrator);
 
-const result = await motion.invoke(
+const result = await motion.invokeWithScene(
   "@motion quero uma animação premium desse dashboard mostrando uma oportunidade descoberta pela IA",
   {
     attachments: [
       {
-        name: "dashboard.png",
-        path: "./assets/dashboard.png",
-        mime_type: "image/png",
+        name: "dashboard.svg",
+        path: "demo/dashboard.svg",
+        mime_type: "image/svg+xml",
         source: "user"
       }
     ]
@@ -71,8 +74,14 @@ const result = await motion.invoke(
 );
 
 console.log(JSON.stringify({
-  job_id: result.job_id,
-  state: result.state,
-  request: result.metadata.invocation,
-  materials: result.brief.materials
+  job_id: result.context.job_id,
+  state: result.context.state,
+  request: result.context.metadata.invocation,
+  materials: result.context.brief.materials,
+  scene: {
+    composition: "MotionScene",
+    layers: result.scene.layers.length,
+    firstLayerSource: result.scene.layers[0]?.source,
+    firstLayerOriginal: result.scene.layers[0]?.originalAsset
+  }
 }, null, 2));
