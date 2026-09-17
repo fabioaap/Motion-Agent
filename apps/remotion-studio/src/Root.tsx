@@ -1,7 +1,7 @@
 import React from "react";
 import {Composition} from "remotion";
-import {demoMotionSpec} from "./demoSpec.js";
-import {MotionAgentDemo} from "./MotionAgentDemo.js";
+import {demoMotionSpec} from "./demoSpec";
+import {MotionAgentDemo} from "./MotionAgentDemo";
 
 export const RemotionRoot: React.FC = () => {
   return (
