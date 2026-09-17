@@ -27,6 +27,7 @@
     "motion": "pnpm --filter @motion-agent/cli start",
     "tools:smoke": "pnpm --filter @motion-agent/node-tools smoke",
     "installer:smoke": "node installer/smoke.mjs",
+    "installer:package-smoke": "node installer/package-smoke.mjs",
     "skills:remotion": "node scripts/install-remotion-skills.mjs"
   }
 }
