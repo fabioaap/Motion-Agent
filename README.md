@@ -1,21 +1,26 @@
-# Motion Director Orchestrator
+# Motion Agent
 
-Runtime multiagente do comando `@motion`, com direção de motion, fidelidade de assets, QA e execução em Remotion.
+`@motion` is a multi agent motion direction and Remotion production runtime with strict asset fidelity, visual QA and self correction loops.
 
-## Estrutura
+## What is configured
 
-```text
-apps/
-  remotion-studio/       preview e render reais
-packages/
-  runtime/               contratos, grafo, agentes, QA e supervisor
-skills/custom/           skills próprias do Motion Agent
-vendor/remotion-skills/  skills oficiais do Remotion
-```
+The repository now includes:
 
-## Package manager
+* a Zod contracted orchestration runtime
+* a formal state machine and dynamic specialist graph
+* real OpenAI cognitive agents using the Responses API and Structured Outputs
+* original asset ingestion with SHA 256 identity metadata
+* Remotion scene generation and MP4 rendering
+* automatic reference and actual still rendering
+* deterministic pixel diff and asset identity validation
+* independent motion, composition, fidelity, brand and technical critics
+* issue routing, retry memory, technique fallback and maximum QA cycle protection
+* a human approval gate before final delivery
+* official Remotion Agent Skills plus custom Motion Agent skills
 
-O projeto usa pnpm `12.4.2` e Node 22 ou superior.
+## Requirements
+
+Node 22 or newer and pnpm 12.4.2.
 
 ```bash
 corepack enable
@@ -23,142 +28,116 @@ corepack prepare pnpm@12.4.2 --activate
 pnpm install
 ```
 
-## Comandos principais
-
-Validar todo o workspace:
+Copy the environment example and provide your API key locally. Never commit the real key.
 
 ```bash
-pnpm typecheck
+cp .env.example .env
 ```
 
-Executar o demo do runtime:
+Required runtime variable:
+
+```text
+OPENAI_API_KEY=...
+```
+
+Optional variables:
+
+```text
+MOTION_MODEL=gpt-5.5
+MOTION_REASONING_EFFORT=high
+MOTION_VISUAL_MAX_DIFF=0.005
+MOTION_MAX_QA_CYCLES=6
+MOTION_MAX_EQUIVALENT_FAILURES=3
+```
+
+## Run `@motion`
+
+With one asset:
 
 ```bash
-pnpm demo
+pnpm motion -- "@motion --auto anime este dashboard para mostrar uma oportunidade descoberta pela IA" --asset ./dashboard.png
 ```
 
-Validar o gateway humano `@motion` e a geração de scene payload:
+With multiple assets:
 
 ```bash
-pnpm demo:command
+pnpm motion -- "@motion crie uma abertura de produto" --asset ./screen.png --asset ./logo.svg
 ```
 
-Abrir o Remotion Studio:
+Choose a model explicitly:
 
 ```bash
-pnpm studio
+pnpm motion -- "@motion anime esta interface" --asset ./screen.png --model gpt-5.5
 ```
 
-Renderizar a composição de smoke test:
+The command stops at `READY_FOR_HUMAN` after internal QA. Add `--approve` only when you intentionally want the runtime to move through the approval state after convergence.
 
-```bash
-pnpm render:demo
-```
-
-Renderizar o painel de status de um job:
-
-```bash
-pnpm render:job
-```
-
-Renderizar a cena real parametrizada:
-
-```bash
-pnpm render:scene
-```
-
-Instalar ou atualizar as skills oficiais do Remotion no ambiente do agente:
-
-```bash
-pnpm skills:remotion
-```
-
-## `@motion`
-
-`@motion` é o entrypoint humano do sistema. O gateway vive em `packages/runtime/src/command.ts` e sempre encaminha o pedido ao grafo do Orquestrador.
+## Production flow
 
 ```text
 @motion
-@motion --auto crie uma abertura premium para esse logo
-@motion --interactive quero explorar maneiras de animar esse produto
+  -> intake
+  -> asset ingestion and hashing
+  -> Director
+  -> Asset Inspector
+  -> Motion Director
+  -> Motion Spec
+  -> specialist build graph
+  -> Remotion preview hook
+  -> reference still + actual still + pixel diff
+  -> Fidelity Critic + deterministic Visual Fidelity Critic
+  -> Motion Critic + Composition Critic + Technical Validator
+  -> issue routing
+  -> specialist correction
+  -> regression and strategy loop
+  -> READY_FOR_HUMAN
+  -> preview MP4
 ```
 
-O gateway possui três níveis de saída:
+The visual guard has veto power. A model cannot approve around a failed asset identity check or a pixel diff above the configured threshold.
+
+## Asset fidelity
+
+Strict assets follow these rules:
+
+1. reuse the exact original whenever possible
+2. use the original SVG or source component when available
+3. use hybrid composition before approximate reconstruction
+4. request exact source material when reconstruction cannot be validated
+5. never replace an original icon or logo with a similar library asset
+
+Files passed with `--asset` are copied to a job specific directory under `apps/remotion-studio/public/jobs/`. Generated job files and renders are ignored by git.
+
+## Workspace
 
 ```text
-invoke()             -> JobContext
-invokeWithPreview()  -> JobContext + MotionPreviewJob
-invokeWithScene()    -> JobContext + MotionPreviewJob + MotionSceneJob
+apps/
+  motion-cli/            end to end @motion command
+  remotion-studio/       visual preview and video rendering
+packages/
+  runtime/               graph, contracts, QA, supervisor and scene model
+  openai-agents/         real LLM backed cognitive agents
+  node-tools/            ingestion, Remotion preview hook and pixel diff
+skills/custom/           Motion Agent skills
+vendor/remotion-skills/  official Remotion skills
 ```
 
-`MotionSceneJob` é a ponte entre o grafo e a composição audiovisual real.
+## Useful commands
 
-## Runtime
-
-`packages/runtime` contém os contratos Zod, máquina de estados, roteamento, memória de tentativas, Orquestrador, Supervisor e críticos de QA.
-
-`packages/runtime/src/scene.ts` transforma o estado aprovado do job em uma cena declarativa com layers, assets, timing, motion family, layout e política de fidelidade.
-
-Os `AgentHandler` continuam independentes do fornecedor de modelo e podem ser conectados a OpenAI Agents SDK, Claude Agent SDK, Codex, MCP ou ferramentas locais.
-
-## Regra de fidelidade da cena real
-
-O caminho genérico de `MotionScene` não reconstrói visualmente UI, logo ou ícone.
-
-Quando a estratégia for `USE_ORIGINAL`, `REUSE_SVG`, `SEGMENT_ORIGINAL`, `MASK`, `OVERLAY` ou `HYBRID`, o asset original continua sendo a fonte visual do layer.
-
-Reconstrução em React ou SVG precisa ser escolhida explicitamente pelo grafo, executada por especialista e validada pelo Fidelity Critic antes de substituir um original.
-
-## Remotion Studio
-
-`apps/remotion-studio` registra três superfícies:
-
-`MotionAgentDemo` demonstra o sistema.
-
-`MotionJobPreview` mostra o estado do job.
-
-`MotionScene` renderiza a peça audiovisual real usando um `MotionSceneJob` como props.
-
-A composição `MotionScene` já suporta assets de imagem, SVG e vídeo, além de famílias básicas como `Static`, `SoftSpring`, `ScaleReveal`, `MaskReveal`, `PanZoom`, `Focus` e entradas premium.
-
-Os pacotes `remotion` e `@remotion/cli` ficam fixados na mesma versão para evitar incompatibilidades entre pacotes Remotion.
-
-## Assets
-
-Assets locais usados pelo Remotion devem ficar em `apps/remotion-studio/public` e o scene payload referencia o caminho relativo a essa pasta.
-
-Exemplo:
-
-```json
-{
-  "source": "jobs/meu-job/dashboard.svg",
-  "strategy": "REUSE_SVG",
-  "fidelityRequirement": "STRICT"
-}
+```bash
+pnpm typecheck
+pnpm tools:smoke
+pnpm demo
+pnpm demo:command
+pnpm studio
+pnpm render:scene
+pnpm skills:remotion
 ```
 
-Assets HTTP também podem ser passados diretamente quando a política do job permitir.
+## CI
 
-## Skills
+GitHub Actions validates TypeScript, Node tooling, runtime demos, composition discovery, three MP4 renders and a Remotion still. It does not call a paid LLM and therefore does not require an API key.
 
-As skills próprias ficam em `skills/custom`.
+## Security
 
-As skills oficiais são rastreadas em `vendor/remotion-skills` e também podem ser instaladas via `pnpm skills:remotion`.
-
-Antes de escrever código Remotion, carregue `remotion-best-practices` e a skill específica da tarefa.
-
-## Próximos módulos
-
-Conectar `AgentHandler` a modelos reais.
-
-Adicionar ingestão automática de anexos para `public/jobs/<job_id>`.
-
-Adicionar persistência de jobs, issues e tentativas.
-
-Adicionar `render_preview` e captura de frames para o grafo de QA.
-
-Implementar comparação visual por overlay e pixel diff.
-
-Adicionar ingestão de Figma e Design System.
-
-Evoluir o Motion Design System persistente.
+`.env` is ignored. The repository contains only `.env.example`. Do not commit API keys, tokens, cookies or user source files. Production jobs are ignored by git by default.

@@ -1,66 +1,61 @@
-# Motion Agent Repository Rules
-
-This repository implements the `@motion` Motion Director runtime and its Remotion execution surface.
-
-## Package manager
-
-Use pnpm for dependency management and project scripts.
-
-Do not use npm or npx unless a third party tool explicitly requires them and no pnpm compatible invocation exists.
-
-Use `pnpm dlx` for one off package execution.
-
-## Workspace map
-
-The runtime lives in `packages/runtime`.
-
-The Remotion execution surface lives in `apps/remotion-studio`.
-
-Custom Motion Agent skills live in `skills/custom`.
-
-Official Remotion skills are tracked in `vendor/remotion-skills`.
+# Motion Agent instructions
 
 ## Entrypoint
 
-Treat user messages beginning with `@motion` as Motion Director requests.
+`@motion` is the human entrypoint for all motion work in this repository.
 
-The gateway is implemented in `packages/runtime/src/command.ts` and must route requests into the orchestrator instead of bypassing the graph.
+When a request begins with `@motion`, route it through the Motion Agent graph rather than directly producing an unvalidated animation.
 
-## Required execution order
+## Package manager
 
-1. Load the custom Motion Orchestrator skill.
-2. Inspect available assets before choosing a build technique.
-3. Load the official Remotion best practices skill before writing Remotion code.
-4. Load the specific official Remotion skill required by the task when applicable.
-5. Build a preview in `apps/remotion-studio` when the target is Remotion.
-6. Run fidelity, motion, composition and technical QA as required by the graph.
-7. Route failed issues back to the responsible specialist.
-8. Never present an unvalidated first attempt as final.
-
-## Fidelity rule
-
-Approximate reconstruction is a failure when fidelity is required.
-
-Reuse original SVG, React components, design system assets, typography and icons whenever available.
-
-Never replace an original icon with a visually similar icon from another library.
-
-## Remotion version rule
-
-Keep `remotion` and every `@remotion/*` package on the exact same version.
-
-Do not add caret ranges to Remotion packages.
-
-## Remotion skills
-
-Install or refresh official skills with:
+Use pnpm only.
 
 ```bash
-pnpm skills:remotion
+pnpm install
+pnpm typecheck
+pnpm studio
+pnpm motion -- "@motion ..."
 ```
 
-The upstream source is `remotion-dev/skills`.
+Use `pnpm dlx` instead of `npx` for temporary package execution unless a tool explicitly requires otherwise.
 
-## Preserve user changes
+## Skills
 
-Do not overwrite unexpected user changes. Treat them as intentional unless there is clear evidence otherwise.
+Before editing Remotion code, load the official Remotion best practices skill and any task specific Remotion skill available under `vendor/remotion-skills` or installed through `pnpm skills:remotion`.
+
+Custom workflow skills live under `skills/custom`.
+
+## Fidelity invariant
+
+Creativity can be bold. Fidelity cannot be approximate.
+
+Never substitute an exact source logo, icon, component, SVG, typeface, chart or UI element with a merely similar alternative.
+
+Preference order:
+
+1. USE_ORIGINAL
+2. REUSE_SVG or REUSE_COMPONENT
+3. SEGMENT_ORIGINAL
+4. HYBRID, MASK or OVERLAY
+5. reconstruction only with exact source and validation
+6. REQUEST_SOURCE when exact reconstruction cannot be validated
+
+A strict fidelity failure blocks delivery.
+
+## QA graph
+
+No first build is final.
+
+Every converged job must pass the required critics. When visual QA metadata is available, `visual_fidelity_critic` is mandatory and has deterministic veto power.
+
+The preview hook runs between BUILD and QA. It renders reference and actual frames, calculates pixel diff and records asset identity mismatches.
+
+Do not bypass the human approval state for publishing or other irreversible actions.
+
+## OpenAI agents
+
+Real cognitive handlers live in `packages/openai-agents` and use structured Zod outputs. Keep the runtime provider independent and keep API keys out of source control.
+
+## Generated files
+
+Do not commit production jobs, user assets, API keys, QA stills or renders. Those paths are excluded by `.gitignore`.

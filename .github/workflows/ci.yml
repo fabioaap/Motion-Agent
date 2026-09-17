@@ -20,12 +20,14 @@ jobs:
           node-version: 22
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm typecheck
+      - run: pnpm tools:smoke
       - run: pnpm demo
       - run: pnpm demo:command
       - run: pnpm --filter @motion-agent/remotion-studio compositions
       - run: pnpm render:demo
       - run: pnpm render:job
       - run: pnpm render:scene
+      - run: pnpm --filter @motion-agent/remotion-studio exec remotion still src/index.ts MotionScene out/motion-scene-still.png --frame=0 --props=jobs/scene-job.json
       - uses: actions/upload-artifact@v4
         with:
           name: motion-agent-previews
@@ -33,4 +35,5 @@ jobs:
             apps/remotion-studio/out/motion-agent-demo.mp4
             apps/remotion-studio/out/motion-job-preview.mp4
             apps/remotion-studio/out/motion-scene.mp4
+            apps/remotion-studio/out/motion-scene-still.png
           if-no-files-found: error
