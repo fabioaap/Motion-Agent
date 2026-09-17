@@ -1,0 +1,34 @@
+{
+  "jobId": "motion_scene_fixture",
+  "sceneId": "scene_01",
+  "title": "Dashboard motion",
+  "objective": "Animar o dashboard preservando o SVG original.",
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "durationFrames": 150,
+  "background": "#070B14",
+  "presentation": "FULL_FRAME",
+  "showTitle": false,
+  "layers": [
+    {
+      "elementId": "dashboard",
+      "assetId": "dashboard_asset",
+      "name": "dashboard.svg",
+      "type": "SVG",
+      "source": "demo/dashboard.svg",
+      "strategy": "REUSE_SVG",
+      "fidelityRequirement": "STRICT",
+      "startFrame": 0,
+      "endFrame": 149,
+      "motionFamily": "PanZoom",
+      "fit": "contain",
+      "x": 0.5,
+      "y": 0.5,
+      "width": 0.94,
+      "height": 0.92,
+      "zIndex": 1,
+      "originalAsset": true
+    }
+  ]
+}
