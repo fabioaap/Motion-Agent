@@ -1,131 +1,224 @@
 # Motion Agent
 
-`@motion` is a multi agent motion direction and Remotion production runtime with strict asset fidelity, visual QA and self correction loops.
+Motion Agent is an installable motion-design toolkit for AI coding agents such as Codex.
 
-## What is configured
+Its purpose is **not** to be the repository where your product lives. Instead, Motion Agent is installed into another repository so that the agent working in that repository gains an `@motion` workflow, Remotion tooling, motion-design skills, asset-fidelity rules, visual QA and correction loops.
 
-The repository now includes:
+```text
+Motion-Agent
+    |
+    | install
+    v
+Your product repository
+    |
+    +-- product source code
+    +-- design system
+    +-- assets
+    +-- Motion Agent tooling
+    +-- Remotion
+    +-- @motion
+```
 
-* a Zod contracted orchestration runtime
-* a formal state machine and dynamic specialist graph
-* real OpenAI cognitive agents using the Responses API and Structured Outputs
-* original asset ingestion with SHA 256 identity metadata
-* Remotion scene generation and MP4 rendering
-* automatic reference and actual still rendering
-* deterministic pixel diff and asset identity validation
-* independent motion, composition, fidelity, brand and technical critics
-* issue routing, retry memory, technique fallback and maximum QA cycle protection
-* a human approval gate before final delivery
-* official Remotion Agent Skills plus custom Motion Agent skills
+This lets the motion workflow operate with the real context of the product: components, SVGs, fonts, tokens, screenshots, routes and design-system rules.
+
+## Recommended usage
+
+The primary mode is **agent-hosted**.
+
+You clone or install Motion Agent into the repository where you are working, open that repository in Codex or another compatible coding agent, and use `@motion` there.
+
+In this mode the coding agent is the reasoning layer. Motion Agent provides the production system: skills, orchestration rules, Remotion runtime, asset ingestion, visual QA, regression checks and rendering.
+
+**An OpenAI API key is not required for this primary mode.**
+
+A separate standalone provider adapter exists for future server-side automation. It is optional and only needed when Motion Agent must call a model by itself without Codex or another host agent running.
 
 ## Requirements
 
-Node 22 or newer and pnpm 12.4.2.
+- Node.js 22 or newer
+- pnpm 12.4.2
+- Git
+- Codex or another compatible coding-agent environment for the recommended agent-hosted workflow
+
+Enable pnpm if necessary:
 
 ```bash
 corepack enable
 corepack prepare pnpm@12.4.2 --activate
+```
+
+## Install today
+
+Until the distribution CLI is published, install Motion Agent from source.
+
+Clone it alongside the repository where you want to use it:
+
+```bash
+git clone https://github.com/fabioaap/Motion-Agent.git
+cd Motion-Agent
 pnpm install
+pnpm skills:remotion
+pnpm typecheck
 ```
 
-Copy the environment example and provide your API key locally. Never commit the real key.
+Then open the target product repository in your coding agent and make the Motion Agent repository available to that workspace while the installer CLI is being finalized.
+
+The intended final installation experience is:
 
 ```bash
-cp .env.example .env
+cd your-product
+pnpm dlx @fabioaap/motion-agent init
 ```
 
-Required runtime variable:
+That command is the distribution target for this project. Do not depend on it until the installer package is released.
+
+## What the installer will add
+
+The installer is designed to add only the pieces required by the target repository instead of copying this entire development repository.
+
+The target shape is:
 
 ```text
-OPENAI_API_KEY=...
+your-product/
+  .motion/
+    config/
+    runtime/
+    prompts/
+    qa/
+  skills/
+    motion-orchestrator/
+    asset-fidelity/
+    scene-director/
+    motion-qa/
+  motion/
+    remotion/
+  AGENTS.md             # Motion Agent instructions merged safely
+  package.json          # Motion scripts/dependencies added safely
 ```
 
-Optional variables:
+Existing project files, components and design-system assets remain the source of truth.
+
+## Planned installer commands
+
+```bash
+motion-agent init
+motion-agent update
+motion-agent doctor
+motion-agent uninstall
+```
+
+### `init`
+
+Installs Motion Agent into the current repository, detects the existing stack, configures Remotion, installs the Motion skills and adds the minimum required scripts and agent instructions.
+
+### `update`
+
+Updates Motion Agent-managed files without overwriting product-owned code or user customizations.
+
+### `doctor`
+
+Checks Node, pnpm, Remotion, skills, paths, agent instructions and Motion Agent-managed files.
+
+### `uninstall`
+
+Removes Motion Agent-managed files while preserving the product repository and user-owned assets.
+
+## Using `@motion`
+
+Once installed into a product repository, the intended experience is conversational.
 
 ```text
-MOTION_MODEL=gpt-5.5
-MOTION_REASONING_EFFORT=high
-MOTION_VISUAL_MAX_DIFF=0.005
-MOTION_MAX_QA_CYCLES=6
-MOTION_MAX_EQUIVALENT_FAILURES=3
+@motion anime esse dashboard mostrando que a IA encontrou uma oportunidade
 ```
 
-## Run `@motion`
+Because the coding agent is already inside the product repository, it can inspect the actual source material before deciding how to animate it.
 
-With one asset:
+The workflow is expected to prefer, in order:
 
-```bash
-pnpm motion -- "@motion --auto anime este dashboard para mostrar uma oportunidade descoberta pela IA" --asset ./dashboard.png
-```
+1. the exact original asset
+2. the original SVG or source component
+3. existing design-system components and tokens
+4. hybrid composition
+5. validated reconstruction only when necessary
 
-With multiple assets:
-
-```bash
-pnpm motion -- "@motion crie uma abertura de produto" --asset ./screen.png --asset ./logo.svg
-```
-
-Choose a model explicitly:
-
-```bash
-pnpm motion -- "@motion anime esta interface" --asset ./screen.png --model gpt-5.5
-```
-
-The command stops at `READY_FOR_HUMAN` after internal QA. Add `--approve` only when you intentionally want the runtime to move through the approval state after convergence.
+Approximate replacement of a logo, icon, component or other strict asset is not allowed.
 
 ## Production flow
 
 ```text
 @motion
+  -> understand repository context
   -> intake
-  -> asset ingestion and hashing
-  -> Director
-  -> Asset Inspector
-  -> Motion Director
-  -> Motion Spec
-  -> specialist build graph
-  -> Remotion preview hook
-  -> reference still + actual still + pixel diff
-  -> Fidelity Critic + deterministic Visual Fidelity Critic
-  -> Motion Critic + Composition Critic + Technical Validator
-  -> issue routing
-  -> specialist correction
-  -> regression and strategy loop
+  -> asset audit
+  -> source resolution
+  -> creative direction when needed
+  -> motion direction
+  -> motion spec
+  -> specialist routing
+  -> Remotion build
+  -> preview render
+  -> multi-frame visual QA
+  -> fidelity / motion / composition / brand / technical critics
+  -> regression guard
+  -> correction loop
   -> READY_FOR_HUMAN
-  -> preview MP4
+  -> human approval
+  -> final render
 ```
 
-The visual guard has veto power. A model cannot approve around a failed asset identity check or a pixel diff above the configured threshold.
+## What is already implemented in this repository
 
-## Asset fidelity
+The development repository currently includes:
 
-Strict assets follow these rules:
+- Zod-contracted orchestration runtime
+- formal state machine and specialist graph
+- Remotion scene generation
+- MP4 rendering
+- asset ingestion and SHA-256 metadata
+- exact-source identity checks
+- reference-vs-render pixel diff
+- multi-frame motion QA
+- deterministic regression guard
+- issue routing and retry loops
+- human approval state
+- custom Motion Agent skills
+- official Remotion skills integration
+- optional standalone OpenAI provider adapter
+- CI validation and render smoke tests
 
-1. reuse the exact original whenever possible
-2. use the original SVG or source component when available
-3. use hybrid composition before approximate reconstruction
-4. request exact source material when reconstruction cannot be validated
-5. never replace an original icon or logo with a similar library asset
-
-Files passed with `--asset` are copied to a job specific directory under `apps/remotion-studio/public/jobs/`. Generated job files and renders are ignored by git.
-
-## Workspace
+## Repository architecture
 
 ```text
 apps/
-  motion-cli/            end to end @motion command
-  remotion-studio/       visual preview and video rendering
+  motion-cli/            standalone/local execution CLI
+  remotion-studio/       preview and video rendering
+
 packages/
-  runtime/               graph, contracts, QA, supervisor and scene model
-  openai-agents/         real LLM backed cognitive agents
-  node-tools/            ingestion, Remotion preview hook and pixel diff
+  runtime/               graph, contracts, QA and supervisor
+  openai-agents/         optional standalone LLM provider adapter
+  node-tools/            asset ingestion, rendering and visual QA
+
 skills/custom/           Motion Agent skills
-vendor/remotion-skills/  official Remotion skills
+vendor/remotion-skills/  official Remotion skills source
 ```
 
-## Useful commands
+The `openai-agents` package is **optional infrastructure for standalone automation**. It is not the required reasoning path when Motion Agent is being used through Codex or another host coding agent.
+
+## Development setup
+
+If you are contributing to Motion Agent itself:
 
 ```bash
+git clone https://github.com/fabioaap/Motion-Agent.git
+cd Motion-Agent
+corepack enable
+pnpm install
 pnpm typecheck
+```
+
+Useful development commands:
+
+```bash
 pnpm tools:smoke
 pnpm demo
 pnpm demo:command
@@ -134,10 +227,35 @@ pnpm render:scene
 pnpm skills:remotion
 ```
 
+## Standalone mode
+
+Standalone mode is for future automation such as a VPS, webhook, Trello workflow or background worker where no host coding agent is present.
+
+Only this mode requires an AI provider credential. The existing OpenAI adapter reads:
+
+```text
+OPENAI_API_KEY=...
+MOTION_MODEL=gpt-5.6
+```
+
+Provider credentials must remain in environment variables or secret stores and must never be committed.
+
 ## CI
 
-GitHub Actions validates TypeScript, Node tooling, runtime demos, composition discovery, three MP4 renders and a Remotion still. It does not call a paid LLM and therefore does not require an API key.
+The standard CI validates TypeScript, tooling, preview QA, composition discovery and Remotion rendering without making paid LLM calls.
+
+A separate live workflow can exercise the standalone provider when explicitly configured with a secret.
 
 ## Security
 
-`.env` is ignored. The repository contains only `.env.example`. Do not commit API keys, tokens, cookies or user source files. Production jobs are ignored by git by default.
+Never commit API keys, tokens, cookies, private source assets or production credentials.
+
+Generated job assets, QA frames and renders should remain outside version control unless intentionally added as fixtures.
+
+## Project direction
+
+The next distribution milestone is to make Motion Agent a true installer that can be added to an arbitrary repository with one command while preserving that repository's existing architecture.
+
+The product principle is simple:
+
+> Motion Agent installs motion-design capability into the project you already have.
