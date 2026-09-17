@@ -13,28 +13,37 @@ import { MotionStateMachine } from "./state_machine.js";
 import { Supervisor } from "./supervisor.js";
 import { planExecutionGraph } from "./graph.js";
 
+export type PreviewHook = (context: JobContext) => Promise<JobContext>;
+
 export type OrchestratorOptions = {
   maxEquivalentFailures?: number;
+  maxQaCycles?: number;
   requireHumanApproval?: boolean;
+  previewHook?: PreviewHook;
 };
 
 export class MotionOrchestrator {
   private readonly attempts = new AttemptStore();
   private readonly supervisor = new Supervisor();
   private readonly maxEquivalentFailures: number;
+  private readonly maxQaCycles: number;
   private readonly requireHumanApproval: boolean;
+  private readonly previewHook?: PreviewHook;
 
   constructor(
     private readonly agents: AgentRegistry,
     options: OrchestratorOptions = {}
   ) {
     this.maxEquivalentFailures = options.maxEquivalentFailures ?? 3;
+    this.maxQaCycles = options.maxQaCycles ?? 6;
     this.requireHumanApproval = options.requireHumanApproval ?? true;
+    this.previewHook = options.previewHook;
   }
 
   async run(initial: JobContext): Promise<JobContext> {
     let context = JobContextSchema.parse(initial);
     const machine = new MotionStateMachine(context.state);
+    let qaCycles = 0;
 
     context = await this.advance(context, machine, "CONTEXT_READY", "director");
     context = await this.advance(context, machine, "ASSET_AUDIT", "asset_inspector");
@@ -60,8 +69,13 @@ export class MotionOrchestrator {
     context = await this.advance(context, machine, "MOTION_SPEC_READY", "motion_spec_agent");
 
     while (true) {
+      qaCycles += 1;
+      context.metadata = {...context.metadata, qa_cycle: qaCycles};
       context = await this.build(context, machine);
       context = this.setState(context, machine, "PREVIEW_READY");
+      if (this.previewHook) {
+        context = JobContextSchema.parse(await this.previewHook(context));
+      }
       context = await this.runQAGraph(context, machine);
 
       const required = requiredCriticsFor(context);
@@ -78,6 +92,18 @@ export class MotionOrchestrator {
       }
 
       context = this.setState(context, machine, "FIX_REQUIRED");
+      if (qaCycles >= this.maxQaCycles) {
+        context.metadata = {
+          ...context.metadata,
+          convergence: {
+            status: "MAX_QA_CYCLES_REACHED",
+            cycles: qaCycles,
+            unresolved_issue_ids: context.open_issues.map((issue) => issue.issue_id)
+          }
+        };
+        return this.setState(context, machine, "HUMAN_INPUT_REQUIRED");
+      }
+
       const strategyReview = this.shouldReviewStrategy(context.open_issues);
       if (strategyReview) {
         context = this.setState(context, machine, "STRATEGY_REVIEW");
@@ -132,6 +158,7 @@ export class MotionOrchestrator {
     const required = requiredCriticsFor(context);
     const stateForCritic: Record<string, Parameters<MotionStateMachine["transition"]>[0]> = {
       fidelity_critic: "FIDELITY_REVIEW",
+      visual_fidelity_critic: "FIDELITY_REVIEW",
       motion_critic: "MOTION_REVIEW",
       composition_critic: "COMPOSITION_REVIEW",
       brand_critic: "BRAND_REVIEW",

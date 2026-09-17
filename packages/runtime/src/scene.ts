@@ -35,7 +35,8 @@ export const MotionSceneJobSchema = z.object({
   background: z.string().default("#070B14"),
   presentation: z.enum(["FULL_FRAME", "CANVAS"]).default("FULL_FRAME"),
   layers: z.array(MotionSceneLayerSchema),
-  showTitle: z.boolean().default(false)
+  showTitle: z.boolean().default(false),
+  qaStatic: z.boolean().default(false)
 });
 
 export type MotionSceneLayer = z.infer<typeof MotionSceneLayerSchema>;
@@ -140,6 +141,7 @@ export function createSceneJob(context: JobContext): MotionSceneJob {
     durationFrames,
     presentation: layers.length === 1 ? "FULL_FRAME" : "CANVAS",
     layers,
-    showTitle: layers.length === 0
+    showTitle: layers.length === 0,
+    qaStatic: false
   });
 }

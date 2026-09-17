@@ -44,12 +44,11 @@ export function aggregateQA(
 }
 
 export function requiredCriticsFor(context: JobContext): string[] {
-  const critics = [
-    "fidelity_critic",
-    "motion_critic",
-    "composition_critic",
-    "technical_validator"
-  ];
+  const critics = ["fidelity_critic"];
+  if (context.metadata.visual_qa && typeof context.metadata.visual_qa === "object") {
+    critics.push("visual_fidelity_critic");
+  }
+  critics.push("motion_critic", "composition_critic", "technical_validator");
   if (context.brief.brand_context) critics.push("brand_critic");
   return critics;
 }

@@ -16,6 +16,7 @@ export type AgentName =
   | "remotion_specialist"
   | "brand_system_specialist"
   | "fidelity_critic"
+  | "visual_fidelity_critic"
   | "motion_critic"
   | "composition_critic"
   | "brand_critic"

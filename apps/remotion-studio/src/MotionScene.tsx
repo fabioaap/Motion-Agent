@@ -82,7 +82,7 @@ const AssetLayer: React.FC<{layer: MotionSceneLayer; job: MotionSceneJob}> = ({l
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
   const src = resolveSource(layer.source);
-  const animated = animationStyle(layer, frame, fps);
+  const animated = job.qaStatic ? {opacity: 1} : animationStyle(layer, frame, fps);
 
   const common: React.CSSProperties = {
     position: "absolute",
@@ -120,8 +120,8 @@ export const MotionScene: React.FC<MotionSceneJob> = (job) => {
   const frame = useCurrentFrame();
   const {fps} = useVideoConfig();
   const titleProgress = spring({frame, fps, config: {damping: 20, stiffness: 95}});
-  const titleOpacity = interpolate(titleProgress, [0, 1], [0, 1], clamp);
-  const titleY = interpolate(titleProgress, [0, 1], [24, 0], clamp);
+  const titleOpacity = job.qaStatic ? 1 : interpolate(titleProgress, [0, 1], [0, 1], clamp);
+  const titleY = job.qaStatic ? 0 : interpolate(titleProgress, [0, 1], [24, 0], clamp);
 
   return (
     <AbsoluteFill style={{background: job.background, overflow: "hidden"}}>
