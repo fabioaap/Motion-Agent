@@ -12,6 +12,7 @@ import { routeIssue, chooseFallback } from "./routing.js";
 import { MotionStateMachine } from "./state_machine.js";
 import { Supervisor } from "./supervisor.js";
 import { planExecutionGraph } from "./graph.js";
+import { RegressionCheckerHandler } from "./visual_guard.js";
 
 export type PreviewHook = (context: JobContext) => Promise<JobContext>;
 
@@ -156,25 +157,38 @@ export class MotionOrchestrator {
     machine: MotionStateMachine
   ): Promise<JobContext> {
     const required = requiredCriticsFor(context);
-    const stateForCritic: Record<string, Parameters<MotionStateMachine["transition"]>[0]> = {
+    const stateForCritic: Record<string, Parameters<MotionStateMachine["transition"]>[0] | null> = {
       fidelity_critic: "FIDELITY_REVIEW",
       visual_fidelity_critic: "FIDELITY_REVIEW",
       motion_critic: "MOTION_REVIEW",
       composition_critic: "COMPOSITION_REVIEW",
       brand_critic: "BRAND_REVIEW",
-      technical_validator: "TECHNICAL_REVIEW"
+      technical_validator: "TECHNICAL_REVIEW",
+      regression_checker: null
     };
 
     context.qa_reports = [];
+    const reviewStates: Parameters<MotionStateMachine["transition"]>[0][] = [];
     for (const critic of required) {
       const target = stateForCritic[critic];
-      if (target && machine.state !== target) {
-        context = this.setState(context, machine, target);
+      if (target && !reviewStates.includes(target)) reviewStates.push(target);
+    }
+    for (const target of reviewStates) {
+      if (machine.state !== target) context = this.setState(context, machine, target);
+    }
+
+    const qaInput = structuredClone(context);
+    const results = await Promise.all(required.map(async (critic) => {
+      if (critic === "regression_checker") {
+        return new RegressionCheckerHandler().run(structuredClone(qaInput));
       }
-      const result = await this.agents.get(critic as AgentName).run(context);
+      return this.agents.get(critic as AgentName).run(structuredClone(qaInput));
+    }));
+
+    for (const result of results) {
       context = this.mergeContext(context, result.context);
     }
-    return context;
+    return JobContextSchema.parse(context);
   }
 
   private async fixIssues(context: JobContext): Promise<JobContext> {

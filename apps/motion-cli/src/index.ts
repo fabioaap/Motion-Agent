@@ -96,11 +96,12 @@ let initial = createInitialContextFromCommand(parsedCommand);
 initial = applyIngestedAssetMetadata(initial, ingested);
 
 const registry = createOpenAIAgentRegistry({
-  model: options.model ?? undefined
+  model: options.model ?? process.env.MOTION_MODEL ?? "gpt-5.6"
 });
 const previewHook = createRemotionPreviewHook({
   repoRoot: root,
-  maxDiffRatio: options.maxDiffRatio ?? Number(process.env.MOTION_VISUAL_MAX_DIFF ?? 0.005)
+  maxDiffRatio: options.maxDiffRatio ?? Number(process.env.MOTION_VISUAL_MAX_DIFF ?? 0.005),
+  maxMotionKeyframes: Number(process.env.MOTION_QA_KEYFRAMES ?? 7)
 });
 const orchestrator = new MotionOrchestrator(registry, {
   requireHumanApproval: true,
@@ -126,10 +127,14 @@ const contextPath = await persistContext(root, context);
 const visual = context.metadata.visual_qa && typeof context.metadata.visual_qa === "object"
   ? context.metadata.visual_qa as Record<string, unknown>
   : null;
+const regression = context.metadata.regression_qa && typeof context.metadata.regression_qa === "object"
+  ? context.metadata.regression_qa as Record<string, unknown>
+  : null;
 
 console.log(JSON.stringify({
   job_id: context.job_id,
   state: context.state,
+  model: options.model ?? process.env.MOTION_MODEL ?? "gpt-5.6",
   qa_cycle: context.metadata.qa_cycle ?? null,
   preview_video: previewVideo,
   context_file: contextPath,
@@ -138,8 +143,10 @@ console.log(JSON.stringify({
     threshold: visual.threshold ?? null,
     reference_path: visual.reference_path ?? null,
     actual_path: visual.actual_path ?? null,
-    diff_path: visual.diff_path ?? null
+    diff_path: visual.diff_path ?? null,
+    motion_keyframes: visual.motion_keyframes ?? []
   } : null,
+  regression_qa: regression ?? null,
   open_issues: context.open_issues.map((issue) => ({
     id: issue.issue_id,
     category: issue.category,

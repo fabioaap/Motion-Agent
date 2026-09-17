@@ -26,6 +26,20 @@ export type RemotionPreviewHookOptions = {
   repoRoot?: string;
   pixelThreshold?: number;
   maxDiffRatio?: number;
+  maxMotionKeyframes?: number;
+};
+
+type SceneSnapshotLayer = {
+  elementId: string;
+  source: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fit: string;
+  zIndex: number;
+  strategy: string;
+  originalAsset: boolean;
 };
 
 function portable(value: string): string {
@@ -106,13 +120,82 @@ function referenceScene(context: JobContext, actual: MotionSceneJob): MotionScen
   });
 }
 
-async function renderStill(studioRoot: string, propsPath: string, outputPath: string): Promise<void> {
+function sceneSnapshot(scene: MotionSceneJob): SceneSnapshotLayer[] {
+  return scene.layers.map((layer) => ({
+    elementId: layer.elementId,
+    source: normalizedSource(layer.source),
+    x: layer.x,
+    y: layer.y,
+    width: layer.width,
+    height: layer.height,
+    fit: layer.fit,
+    zIndex: layer.zIndex,
+    strategy: layer.strategy,
+    originalAsset: layer.originalAsset
+  }));
+}
+
+function regressionMismatches(context: JobContext, current: SceneSnapshotLayer[]): string[] {
+  const raw = context.metadata.scene_snapshot;
+  if (!Array.isArray(raw)) return [];
+  const previous = raw.filter((item): item is SceneSnapshotLayer => Boolean(item && typeof item === "object"));
+  const locked = new Set([
+    ...context.locked_elements,
+    ...(context.decomposition?.elements.filter((item) => item.scope_status === "LOCKED").map((item) => item.element_id) ?? [])
+  ]);
+  if (locked.size === 0) return [];
+
+  const before = new Map(previous.map((item) => [item.elementId, item] as const));
+  const after = new Map(current.map((item) => [item.elementId, item] as const));
+  const mismatches: string[] = [];
+
+  for (const elementId of locked) {
+    const oldLayer = before.get(elementId);
+    const newLayer = after.get(elementId);
+    if (!oldLayer || !newLayer) {
+      mismatches.push(`${elementId}: locked layer was added or removed`);
+      continue;
+    }
+    for (const key of ["source", "x", "y", "width", "height", "fit", "zIndex", "strategy", "originalAsset"] as const) {
+      if (oldLayer[key] !== newLayer[key]) {
+        mismatches.push(`${elementId}.${key}: ${String(oldLayer[key])} -> ${String(newLayer[key])}`);
+      }
+    }
+  }
+  return mismatches;
+}
+
+function selectMotionKeyframes(context: JobContext, scene: MotionSceneJob, limit = 7): number[] {
+  const maxFrame = Math.max(0, scene.durationFrames - 1);
+  const frames = new Set<number>([
+    0,
+    Math.round(maxFrame * 0.2),
+    Math.round(maxFrame * 0.4),
+    Math.round(maxFrame * 0.6),
+    Math.round(maxFrame * 0.8),
+    maxFrame
+  ]);
+  for (const item of context.motion_spec?.timeline ?? []) {
+    frames.add(Math.max(0, Math.min(maxFrame, item.start_frame)));
+    frames.add(Math.max(0, Math.min(maxFrame, Math.round((item.start_frame + item.end_frame) / 2))));
+    frames.add(Math.max(0, Math.min(maxFrame, item.end_frame)));
+  }
+  const ordered = [...frames].sort((a, b) => a - b);
+  if (ordered.length <= limit) return ordered;
+  const sampled = new Set<number>();
+  for (let index = 0; index < limit; index += 1) {
+    sampled.add(ordered[Math.round((index / (limit - 1)) * (ordered.length - 1))]);
+  }
+  return [...sampled].sort((a, b) => a - b);
+}
+
+async function renderStill(studioRoot: string, propsPath: string, outputPath: string, frame = 0): Promise<void> {
   const propsRelative = portable(relative(studioRoot, propsPath));
   const outputRelative = portable(relative(studioRoot, outputPath));
   await mkdir(dirname(outputPath), {recursive: true});
   await run("pnpm", [
     "exec", "remotion", "still", "src/index.ts", "MotionScene", outputRelative,
-    "--frame=0",
+    `--frame=${frame}`,
     `--props=${propsRelative}`
   ], studioRoot);
 }
@@ -122,24 +205,39 @@ export function createRemotionPreviewHook(options: RemotionPreviewHookOptions = 
     const root = await findRepoRoot(options.repoRoot ?? process.cwd());
     const studioRoot = join(root, "apps", "remotion-studio");
     const safeJob = context.job_id.replace(/[^a-zA-Z0-9._-]+/g, "-");
+    const cycle = Number(context.metadata.qa_cycle ?? 1);
     const qaDir = join(studioRoot, "jobs", "qa");
-    const outDir = join(studioRoot, "out", "qa");
-    const actualProps = join(qaDir, `${safeJob}-actual.json`);
-    const referenceProps = join(qaDir, `${safeJob}-reference.json`);
-    const actualPng = join(outDir, `${safeJob}-actual.png`);
-    const referencePng = join(outDir, `${safeJob}-reference.png`);
-    const diffPng = join(outDir, `${safeJob}-diff.png`);
+    const outDir = join(studioRoot, "out", "qa", safeJob, `cycle-${cycle}`);
+    const actualProps = join(qaDir, `${safeJob}-c${cycle}-actual.json`);
+    const referenceProps = join(qaDir, `${safeJob}-c${cycle}-reference.json`);
+    const motionProps = join(qaDir, `${safeJob}-c${cycle}-motion.json`);
+    const actualPng = join(outDir, "fidelity-actual.png");
+    const referencePng = join(outDir, "fidelity-reference.png");
+    const diffPng = join(outDir, "fidelity-diff.png");
     const pixelThreshold = options.pixelThreshold ?? 0.1;
     const maxDiffRatio = options.maxDiffRatio ?? 0.005;
 
     try {
-      const actualScene = MotionSceneJobSchema.parse({...createSceneJob(context), qaStatic: true});
+      const motionScene = MotionSceneJobSchema.parse({...createSceneJob(context), qaStatic: false});
+      const actualScene = MotionSceneJobSchema.parse({...motionScene, qaStatic: true});
       const expectedScene = referenceScene(context, actualScene);
+      const snapshot = sceneSnapshot(motionScene);
+      const regression = regressionMismatches(context, snapshot);
+
       await writeJson(actualProps, actualScene);
       await writeJson(referenceProps, expectedScene);
-      await renderStill(studioRoot, referenceProps, referencePng);
-      await renderStill(studioRoot, actualProps, actualPng);
+      await writeJson(motionProps, motionScene);
+      await renderStill(studioRoot, referenceProps, referencePng, 0);
+      await renderStill(studioRoot, actualProps, actualPng, 0);
       const diff = await comparePngs(referencePng, actualPng, diffPng, pixelThreshold);
+
+      const keyframes = selectMotionKeyframes(context, motionScene, options.maxMotionKeyframes ?? 7);
+      const motionKeyframes: {frame: number; path: string}[] = [];
+      for (const frame of keyframes) {
+        const output = join(outDir, `motion-f${String(frame).padStart(4, "0")}.png`);
+        await renderStill(studioRoot, motionProps, output, frame);
+        motionKeyframes.push({frame, path: output});
+      }
 
       const assets = new Map((context.assets?.assets ?? []).map((asset) => [asset.asset_id, asset] as const));
       const identityMismatches: string[] = [];
@@ -167,8 +265,21 @@ export function createRemotionPreviewHook(options: RemotionPreviewHookOptions = 
           identity_mismatches: identityMismatches,
           reference_path: referencePng,
           actual_path: actualPng,
-          diff_path: diffPng
-        }
+          diff_path: diffPng,
+          motion_keyframes: motionKeyframes
+        },
+        regression_qa: {
+          mismatches: regression,
+          locked_elements: [
+            ...new Set([
+              ...context.locked_elements,
+              ...(context.decomposition?.elements.filter((item) => item.scope_status === "LOCKED").map((item) => item.element_id) ?? [])
+            ])
+          ],
+          baseline_available: Array.isArray(context.metadata.scene_snapshot),
+          cycle
+        },
+        scene_snapshot: snapshot
       };
       return JobContextSchema.parse(next);
     } catch (error) {
@@ -183,7 +294,14 @@ export function createRemotionPreviewHook(options: RemotionPreviewHookOptions = 
           identity_mismatches: [`Preview QA failed: ${message}`],
           reference_path: referencePng,
           actual_path: actualPng,
-          diff_path: diffPng
+          diff_path: diffPng,
+          motion_keyframes: []
+        },
+        regression_qa: {
+          mismatches: [`Preview QA failed before regression validation: ${message}`],
+          locked_elements: context.locked_elements,
+          baseline_available: Array.isArray(context.metadata.scene_snapshot),
+          cycle
         }
       };
       return JobContextSchema.parse(next);

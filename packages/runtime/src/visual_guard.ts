@@ -8,12 +8,26 @@ type VisualQARecord = {
   reference_path?: unknown;
   actual_path?: unknown;
   diff_path?: unknown;
+  motion_keyframes?: unknown;
+};
+
+type RegressionQARecord = {
+  mismatches?: unknown;
+  locked_elements?: unknown;
+  baseline_available?: unknown;
+  cycle?: unknown;
 };
 
 function visualRecord(context: JobContext): VisualQARecord | null {
   const raw = context.metadata.visual_qa;
   if (!raw || typeof raw !== "object") return null;
   return raw as VisualQARecord;
+}
+
+function regressionRecord(context: JobContext): RegressionQARecord | null {
+  const raw = context.metadata.regression_qa;
+  if (!raw || typeof raw !== "object") return null;
+  return raw as RegressionQARecord;
 }
 
 export class VisualFidelityCriticHandler implements AgentHandler {
@@ -87,6 +101,49 @@ export class VisualFidelityCriticHandler implements AgentHandler {
       critical_issues: issues.filter((issue) => issue.severity === "CRITICAL").length,
       major_issues: issues.filter((issue) => issue.severity === "MAJOR").length,
       minor_issues: issues.filter((issue) => issue.severity === "MINOR").length,
+      issues
+    };
+
+    const next = structuredClone(context);
+    next.qa_reports = [
+      ...next.qa_reports.filter((existing) => existing.critic !== this.name),
+      report
+    ];
+    return {context: JobContextSchema.parse(next)};
+  }
+}
+
+export class RegressionCheckerHandler implements AgentHandler {
+  readonly name = "regression_checker" as const;
+
+  async run(context: JobContext): Promise<AgentResult> {
+    const regression = regressionRecord(context);
+    const mismatches = regression && Array.isArray(regression.mismatches)
+      ? regression.mismatches.map(String)
+      : [];
+    const issues: QAIssue[] = mismatches.map((mismatch, index) => ({
+      issue_id: `regression:${context.scene_id}:${index}`,
+      scene_id: context.scene_id,
+      frame_start: null,
+      frame_end: null,
+      category: "REGRESSION",
+      severity: "CRITICAL",
+      element_id: null,
+      expected: "Locked scene scope remains byte and geometry stable across correction cycles",
+      observed: mismatch,
+      responsible_agent: "composition_agent",
+      recommended_action: "Revert changes outside the active issue scope and reapply the smallest correction",
+      blocks_delivery: true
+    }));
+
+    const report: QAReport = {
+      job_id: context.job_id,
+      scene_id: context.scene_id,
+      critic: this.name,
+      result: issues.length === 0 ? "PASS" : "FAIL",
+      critical_issues: issues.length,
+      major_issues: 0,
+      minor_issues: 0,
       issues
     };
 

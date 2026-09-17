@@ -48,7 +48,11 @@ export function requiredCriticsFor(context: JobContext): string[] {
   if (context.metadata.visual_qa && typeof context.metadata.visual_qa === "object") {
     critics.push("visual_fidelity_critic");
   }
-  critics.push("motion_critic", "composition_critic", "technical_validator");
+  critics.push("motion_critic", "composition_critic");
   if (context.brief.brand_context) critics.push("brand_critic");
+  critics.push("technical_validator");
+  if (context.metadata.regression_qa && typeof context.metadata.regression_qa === "object") {
+    critics.push("regression_checker");
+  }
   return critics;
 }
