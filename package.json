@@ -1,11 +1,21 @@
 {
-  "name": "motion-agent",
-  "version": "0.5.0",
-  "private": true,
+  "name": "@fabioaap/motion-agent",
+  "version": "0.6.0",
+  "private": false,
+  "type": "module",
   "packageManager": "pnpm@12.4.2",
   "engines": {
     "node": ">=22"
   },
+  "bin": {
+    "motion-agent": "bin/motion-agent.mjs"
+  },
+  "files": [
+    "bin",
+    "installer",
+    "skills/custom",
+    "README.md"
+  ],
   "scripts": {
     "typecheck": "pnpm -r typecheck",
     "demo": "pnpm --filter @motion-agent/runtime demo",
@@ -16,6 +26,7 @@
     "render:scene": "pnpm --filter @motion-agent/remotion-studio render:scene",
     "motion": "pnpm --filter @motion-agent/cli start",
     "tools:smoke": "pnpm --filter @motion-agent/node-tools smoke",
+    "installer:smoke": "node installer/smoke.mjs",
     "skills:remotion": "node scripts/install-remotion-skills.mjs"
   }
 }
