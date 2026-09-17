@@ -1,6 +1,6 @@
 {
   "name": "motion-agent",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "packageManager": "pnpm@12.4.2",
   "engines": {
@@ -13,6 +13,7 @@
     "studio": "pnpm --filter @motion-agent/remotion-studio studio",
     "render:demo": "pnpm --filter @motion-agent/remotion-studio render:demo",
     "render:job": "pnpm --filter @motion-agent/remotion-studio render:job",
+    "render:scene": "pnpm --filter @motion-agent/remotion-studio render:scene",
     "skills:remotion": "node scripts/install-remotion-skills.mjs"
   }
 }
