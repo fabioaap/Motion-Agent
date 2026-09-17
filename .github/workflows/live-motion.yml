@@ -1,0 +1,53 @@
+name: Live Motion Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: OpenAI model ID
+        required: false
+        default: gpt-5.6
+      prompt:
+        description: Motion request
+        required: false
+        default: '@motion --auto anime o dashboard preservando o SVG original e destacando a oportunidade principal'
+
+jobs:
+  live-motion:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      MOTION_MODEL: ${{ inputs.model }}
+      MOTION_REASONING_EFFORT: high
+      MOTION_VISUAL_MAX_DIFF: '0.005'
+      MOTION_QA_KEYFRAMES: '7'
+      MOTION_MAX_QA_CYCLES: '6'
+      MOTION_MAX_EQUIVALENT_FAILURES: '3'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Require API key
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY is not configured in GitHub Actions secrets."
+            exit 1
+          fi
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm typecheck
+      - name: Run live @motion graph
+        run: pnpm motion -- "${{ inputs.prompt }}" --asset apps/remotion-studio/public/demo/dashboard.svg --approve
+      - uses: actions/upload-artifact@v4
+        with:
+          name: live-motion-output
+          path: |
+            apps/remotion-studio/out/jobs/*.mp4
+            apps/remotion-studio/out/qa/**/*
+            apps/remotion-studio/jobs/generated/*.json
+          if-no-files-found: warn
