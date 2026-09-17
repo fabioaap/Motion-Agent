@@ -8,3 +8,7 @@ out/
 *.log
 output/
 renders/
+apps/remotion-studio/public/jobs/
+apps/remotion-studio/jobs/generated/
+apps/remotion-studio/jobs/qa/
+apps/remotion-studio/out/

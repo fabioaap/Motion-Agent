@@ -1,0 +1,20 @@
+{
+  "name": "@motion-agent/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@motion-agent/node-tools": "workspace:*",
+    "@motion-agent/openai-agents": "workspace:*",
+    "@motion-agent/runtime": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.3",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3"
+  }
+}
