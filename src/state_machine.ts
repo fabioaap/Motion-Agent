@@ -1,0 +1,51 @@
+import type { JobState } from "./contracts.js";
+
+const transitions: Record<JobState, JobState[]> = {
+  INTAKE: ["CONTEXT_READY", "HUMAN_INPUT_REQUIRED", "BLOCKED"],
+  CONTEXT_READY: ["ASSET_AUDIT", "BLOCKED"],
+  ASSET_AUDIT: ["SOURCE_RESOLUTION", "DIRECTION_DISCOVERY", "DIRECTION_READY", "BLOCKED"],
+  SOURCE_RESOLUTION: ["ASSET_AUDIT", "HUMAN_INPUT_REQUIRED", "BLOCKED"],
+  DIRECTION_DISCOVERY: ["DIRECTION_READY", "HUMAN_INPUT_REQUIRED", "BLOCKED"],
+  DIRECTION_READY: ["MOTION_SPEC_READY", "BLOCKED"],
+  MOTION_SPEC_READY: ["BUILDING", "BLOCKED"],
+  BUILDING: ["PREVIEW_READY", "FIX_REQUIRED", "BLOCKED"],
+  PREVIEW_READY: ["FIDELITY_REVIEW", "BLOCKED"],
+  FIDELITY_REVIEW: ["MOTION_REVIEW", "FIX_REQUIRED", "BLOCKED"],
+  MOTION_REVIEW: ["COMPOSITION_REVIEW", "FIX_REQUIRED", "BLOCKED"],
+  COMPOSITION_REVIEW: ["BRAND_REVIEW", "TECHNICAL_REVIEW", "FIX_REQUIRED", "BLOCKED"],
+  BRAND_REVIEW: ["TECHNICAL_REVIEW", "FIX_REQUIRED", "BLOCKED"],
+  TECHNICAL_REVIEW: ["QA_AGGREGATION", "FIX_REQUIRED", "BLOCKED"],
+  QA_AGGREGATION: ["FIX_REQUIRED", "READY_FOR_HUMAN", "BLOCKED"],
+  FIX_REQUIRED: ["BUILDING", "STRATEGY_REVIEW", "HUMAN_INPUT_REQUIRED", "BLOCKED"],
+  STRATEGY_REVIEW: ["BUILDING", "SOURCE_RESOLUTION", "HUMAN_INPUT_REQUIRED", "BLOCKED"],
+  HUMAN_INPUT_REQUIRED: ["INTAKE", "SOURCE_RESOLUTION", "DIRECTION_DISCOVERY", "BUILDING", "BLOCKED"],
+  READY_FOR_HUMAN: ["HUMAN_APPROVED", "FIX_REQUIRED", "BLOCKED"],
+  HUMAN_APPROVED: ["FINAL_RENDER", "FIX_REQUIRED", "BLOCKED"],
+  FINAL_RENDER: ["DELIVERED", "FIX_REQUIRED", "BLOCKED"],
+  DELIVERED: [],
+  BLOCKED: []
+};
+
+export function canTransition(from: JobState, to: JobState): boolean {
+  return transitions[from].includes(to);
+}
+
+export function assertTransition(from: JobState, to: JobState): void {
+  if (!canTransition(from, to)) {
+    throw new Error(`Invalid state transition: ${from} -> ${to}`);
+  }
+}
+
+export class MotionStateMachine {
+  constructor(private current: JobState) {}
+
+  get state(): JobState {
+    return this.current;
+  }
+
+  transition(to: JobState): JobState {
+    assertTransition(this.current, to);
+    this.current = to;
+    return this.current;
+  }
+}
