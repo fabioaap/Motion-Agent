@@ -1,24 +1,17 @@
 {
   "name": "motion-agent",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "type": "module",
   "packageManager": "pnpm@12.4.2",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "demo": "tsx examples/demo.ts",
-    "demo:command": "tsx examples/command.ts",
+    "typecheck": "pnpm -r typecheck",
+    "demo": "pnpm --filter @motion-agent/runtime demo",
+    "demo:command": "pnpm --filter @motion-agent/runtime demo:command",
+    "studio": "pnpm --filter @motion-agent/remotion-studio studio",
+    "render:demo": "pnpm --filter @motion-agent/remotion-studio render:demo",
     "skills:remotion": "node scripts/install-remotion-skills.mjs"
-  },
-  "dependencies": {
-    "zod": "^3.25.76"
-  },
-  "devDependencies": {
-    "@types/node": "^22.15.30",
-    "tsx": "^4.20.3",
-    "typescript": "^5.8.3"
   }
 }
