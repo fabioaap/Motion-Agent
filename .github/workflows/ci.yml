@@ -46,6 +46,10 @@ jobs:
           for frame in 0 60 120 180 255 330 405 495 539; do
             npx remotion still src/index.ts AdsmagicClickToSale "out/adsmagic-qa/frame-${frame}.png" --frame=${frame}
           done
+      - name: Install FFmpeg for contact sheet
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
       - name: Build Adsmagic contact sheet
         working-directory: apps/remotion-studio
         run: |
