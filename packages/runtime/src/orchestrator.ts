@@ -7,12 +7,12 @@ import {
 } from "./contracts.js";
 import { AgentRegistry, type AgentName } from "./agents.js";
 import { AttemptStore } from "./memory.js";
-import { aggregateQA, requiredCriticsFor } from "./qa.js";
+import { aggregateQA, requiredCriticsFor, requiresLayerability } from "./qa.js";
 import { routeIssue, chooseFallback } from "./routing.js";
 import { MotionStateMachine } from "./state_machine.js";
 import { Supervisor } from "./supervisor.js";
 import { planExecutionGraph } from "./graph.js";
-import { RegressionCheckerHandler } from "./visual_guard.js";
+import { LayerabilityCriticHandler, RegressionCheckerHandler } from "./visual_guard.js";
 
 export type PreviewHook = (context: JobContext) => Promise<JobContext>;
 
@@ -48,13 +48,24 @@ export class MotionOrchestrator {
 
     context = await this.advance(context, machine, "CONTEXT_READY", "director");
     context = await this.advance(context, machine, "ASSET_AUDIT", "asset_inspector");
+    context = await this.advance(context, machine, "SCENE_TOPOLOGY_AUDIT", "decomposition_agent");
 
     if (this.needsSourceResolution(context)) {
       context = await this.advance(context, machine, "SOURCE_RESOLUTION", "source_asset_agent");
       if (this.needsHumanSource(context)) {
         return this.setState(context, machine, "HUMAN_INPUT_REQUIRED");
       }
-      context = this.setState(context, machine, "ASSET_AUDIT");
+      context = await this.advance(context, machine, "SCENE_TOPOLOGY_AUDIT", "decomposition_agent");
+    }
+
+    context = this.setState(context, machine, "LAYERABILITY_GATE");
+    const layerability = this.evaluateLayerabilityGate(context);
+    context.metadata = {
+      ...context.metadata,
+      layerability_gate: layerability
+    };
+    if (!layerability.pass) {
+      return this.setState(context, machine, "HUMAN_INPUT_REQUIRED");
     }
 
     if (context.brief.user_direction_level === "LOW") {
@@ -159,6 +170,7 @@ export class MotionOrchestrator {
     const required = requiredCriticsFor(context);
     const stateForCritic: Record<string, Parameters<MotionStateMachine["transition"]>[0] | null> = {
       fidelity_critic: "FIDELITY_REVIEW",
+      layerability_critic: "FIDELITY_REVIEW",
       visual_fidelity_critic: "FIDELITY_REVIEW",
       motion_critic: "MOTION_REVIEW",
       composition_critic: "COMPOSITION_REVIEW",
@@ -179,6 +191,9 @@ export class MotionOrchestrator {
 
     const qaInput = structuredClone(context);
     const results = await Promise.all(required.map(async (critic) => {
+      if (critic === "layerability_critic") {
+        return new LayerabilityCriticHandler().run(structuredClone(qaInput));
+      }
       if (critic === "regression_checker") {
         return new RegressionCheckerHandler().run(structuredClone(qaInput));
       }
@@ -272,6 +287,51 @@ export class MotionOrchestrator {
 
   private selectBuildAgents(context: JobContext): AgentName[] {
     return planExecutionGraph(context).build_agents;
+  }
+
+  private evaluateLayerabilityGate(context: JobContext): {pass: boolean; status: string; reasons: string[]} {
+    if (!requiresLayerability(context)) {
+      return {pass: true, status: "NOT_REQUIRED", reasons: []};
+    }
+
+    const decomposition = context.decomposition;
+    const reasons: string[] = [];
+
+    if (!decomposition) {
+      reasons.push("Missing decomposition for component-level motion");
+      return {pass: false, status: "FAIL", reasons};
+    }
+
+    if (decomposition.layerability_status !== "LAYERED_READY") {
+      reasons.push(`Layerability status is ${decomposition.layerability_status}`);
+    }
+    if (!decomposition.layer_map_verified) {
+      reasons.push("Layer Map is not verified");
+    }
+    if (decomposition.full_scene_flattened_foreground) {
+      reasons.push("Flattened full-scene foreground detected");
+    }
+
+    const layerMap = new Map(decomposition.layer_map.map((layer) => [layer.element_id, layer]));
+    for (const element of decomposition.elements.filter((item) => item.requires_animation)) {
+      const layer = layerMap.get(element.element_id);
+      if (!layer) {
+        reasons.push(`Animated element ${element.element_id} is missing from the Layer Map`);
+        continue;
+      }
+      if (!layer.independently_addressable) {
+        reasons.push(`Animated element ${element.element_id} is not independently addressable`);
+      }
+      if (layer.source_kind === "FLATTENED_STYLEFRAME") {
+        reasons.push(`Animated element ${element.element_id} still depends on a flattened styleframe`);
+      }
+    }
+
+    return {
+      pass: reasons.length === 0,
+      status: reasons.length === 0 ? "PASS" : "FAIL",
+      reasons
+    };
   }
 
   private needsSourceResolution(context: JobContext): boolean {
