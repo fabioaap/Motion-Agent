@@ -64,6 +64,16 @@ export function createPreviewJob(context: JobContext): MotionPreviewJob {
     });
   }
 
+  if (context.template_selection) {
+    stages.push({
+      id: "template_resolution",
+      label: "Remotion Template",
+      detail: `${context.template_selection.name} · ${context.template_selection.selection_mode}`,
+      startFrame: stageStart(stages.length, durationFrames),
+      status: "approved"
+    });
+  }
+
   if (context.motion_direction) {
     stages.push({
       id: "motion_direction",
