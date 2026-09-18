@@ -26,6 +26,12 @@ jobs:
       - run: pnpm --filter @motion-agent/node-tools preview-smoke
       - run: pnpm demo
       - run: pnpm demo:command
+      - name: Reconstruct Adsmagic styleframes
+        run: |
+          base64 -d apps/remotion-studio/public/adsmagic-do-clique-a-venda/chunks/hook.b64 > apps/remotion-studio/public/adsmagic-do-clique-a-venda/hook.webp
+          base64 -d apps/remotion-studio/public/adsmagic-do-clique-a-venda/chunks/context.b64 > apps/remotion-studio/public/adsmagic-do-clique-a-venda/context.webp
+          test $(stat -c%s apps/remotion-studio/public/adsmagic-do-clique-a-venda/hook.webp) -gt 12000
+          test $(stat -c%s apps/remotion-studio/public/adsmagic-do-clique-a-venda/context.webp) -gt 10000
       - run: pnpm --filter @motion-agent/remotion-studio compositions
       - run: pnpm render:demo
       - run: pnpm render:job
