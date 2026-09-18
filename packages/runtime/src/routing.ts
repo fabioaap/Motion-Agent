@@ -1,6 +1,7 @@
 import type { AssetStrategy, QAIssue } from "./contracts.js";
 
 export type Specialist =
+  | "decomposition_agent"
   | "source_asset_agent"
   | "ui_react_specialist"
   | "svg_motion_specialist"
@@ -11,6 +12,7 @@ export type Specialist =
   | "regression_checker";
 
 export function routeIssue(issue: QAIssue): Specialist {
+  if (issue.category === "LAYERABILITY") return "decomposition_agent";
   if (issue.category === "REGRESSION") return "regression_checker";
   if (issue.category === "MOTION") return "motion_specialist";
   if (issue.category === "COMPOSITION") return "composition_agent";
