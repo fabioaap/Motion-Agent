@@ -50,6 +50,12 @@ try {
 
   const manifest = JSON.parse(await readFile(join(target, ".motion", "install-manifest.json"), "utf8"));
   if (manifest.installerVersion !== "0.6.0") throw new Error(`Unexpected installer version ${manifest.installerVersion}`);
+  if (manifest.pipelineVersion !== "layered-motion-v1") throw new Error(`Unexpected pipeline version ${manifest.pipelineVersion}`);
+
+  const orchestratorSkill = await readFile(join(target, ".agents", "skills", "motion-orchestrator", "SKILL.md"), "utf8");
+  const qaSkill = await readFile(join(target, ".agents", "skills", "motion-qa", "SKILL.md"), "utf8");
+  if (!orchestratorSkill.includes("## Layerability Gate")) throw new Error("Packaged orchestrator missing Layerability Gate");
+  if (!qaSkill.includes("## Layer Separation Critic")) throw new Error("Packaged QA missing Layer Separation Critic");
 
   run("pnpm", ["dlx", tarball, "doctor", "--target", target, "--json"], repoRoot);
   run("pnpm", ["dlx", tarball, "uninstall", "--target", target], repoRoot);
