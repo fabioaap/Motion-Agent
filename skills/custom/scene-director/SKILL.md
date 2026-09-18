@@ -1,7 +1,7 @@
 ---
 name: scene-director
 description: Converts communication intent into scene hierarchy, layer topology, rhythm, timing and motion direction before implementation
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Scene Director
@@ -40,6 +40,8 @@ Typography strategy
 
 Audio strategy when relevant
 
+Implementation technique
+
 Layer Map
 
 Motion Causality Map
@@ -76,3 +78,19 @@ Every movement should support hierarchy, meaning or interaction feedback.
 Do not add motion only to make the scene busier.
 
 Do not use camera movement as a substitute for missing component motion when the story depends on independent objects changing, appearing, connecting or reacting.
+
+## Template handoff
+
+The Scene Director identifies the required implementation technique, but does not choose visuals from a template.
+
+After Motion Direction is defined, pass the technique requirements to Template Resolution.
+
+Examples:
+
+- true 3D geometry or a real 3D camera can justify the official `three` template;
+- a simple layered React product scene should normally remain on `blank`;
+- glow, parallax or depth alone do not justify `three`;
+- code animation can justify `code-hike`;
+- Skia should be selected only when the rendering problem is genuinely Skia-specific.
+
+The selected template must adapt to the approved scene. The scene must never be redesigned to resemble the template.
