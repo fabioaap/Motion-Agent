@@ -14,7 +14,8 @@ Your product repository
     +-- existing source code
     +-- existing design system
     +-- existing assets
-    +-- .agents/skills/...      Motion Agent skills
+    +-- squads/motion-squad/   AIOX task-first Motion Squad
+    +-- .agents/skills/...      Motion Agent runtime skills
     +-- .motion/remotion/...    isolated Remotion workspace
     +-- AGENTS.md               managed @motion instructions
     +-- @motion
@@ -33,12 +34,13 @@ pnpm dlx github:fabioaap/Motion-Agent init
 The installer will:
 
 1. create the project-local `.motion/` workspace;
-2. install the Motion Agent skills under `.agents/skills/`;
-3. safely merge Motion Agent instructions into `AGENTS.md`;
-4. add Motion Agent generated paths to `.gitignore`;
-5. add convenience motion scripts to an existing `package.json` without replacing existing scripts;
-6. install the isolated Remotion workspace dependencies;
-7. install the official Remotion skills for Codex through the skills CLI.
+2. install the AIOX Motion Squad under `squads/motion-squad/`;
+3. install the Motion Agent runtime skills under `.agents/skills/`;
+4. safely merge Motion Agent instructions into `AGENTS.md`;
+5. add Motion Agent generated paths to `.gitignore`;
+6. add convenience motion scripts to an existing `package.json` without replacing existing scripts;
+7. install the isolated Remotion workspace dependencies;
+8. install the official Remotion skills for Codex through the skills CLI.
 
 The skills CLI supports project-local Codex installation and non-interactive `--agent codex --copy --yes`, which the installer uses for the official Remotion skills.
 
@@ -74,6 +76,18 @@ It creates only the project-facing pieces:
 
 ```text
 your-product/
+  squads/
+    motion-squad/
+      squad.yaml
+      agents/
+      tasks/
+      workflows/
+      checklists/
+      templates/
+      tools/
+      scripts/
+      data/
+
   .agents/
     skills/
       motion-orchestrator/
@@ -169,6 +183,63 @@ pnpm dlx github:fabioaap/Motion-Agent uninstall
 
 Official Remotion skills are intentionally left in place during uninstall because another workflow in the repository may also use them.
 
+## AIOX Motion Squad
+
+The installer now ships a local AIOX Squad at:
+
+```text
+squads/motion-squad/
+```
+
+It follows AIOX 2.1+ task-first structure: the user request enters a task, tasks are executed by specialized agents, and the multi-step production path is coordinated by `workflows/create-motion.yaml`.
+
+The central production rule is intentionally strict:
+
+> If component-level motion requires independent objects and the required assets do not exist, the agent must ask for the missing assets and stop. It must not turn a flattened styleframe into slide-like motion and call it component animation.
+
+The default flow is:
+
+```text
+@motion
+  -> intake
+  -> audit scene topology
+  -> Missing Assets Gate
+      -> missing critical assets -> WAITING_FOR_ASSETS
+      -> flat-only source -> WAITING_FOR_USER_DECISION
+      -> layer-ready/reconstructable -> continue
+  -> motion strategy
+  -> official Remotion template resolution
+  -> layered build
+  -> fidelity + layer separation + motion QA
+  -> READY_FOR_HUMAN
+  -> human approval
+  -> final render
+```
+
+When assets are missing, the squad must produce a concrete request that tells the user:
+- what must move separately;
+- what already exists;
+- what can be reconstructed faithfully;
+- the exact assets still required;
+- what remains blocked without them.
+
+A flattened full-scene image is allowed only as a visual reference, environmental background plate, or an explicitly authorized flat-motion animatic.
+
+### AIOX validation
+
+In a project initialized with AIOX, validate the installed squad with:
+
+```text
+@squad-creator
+*validate-squad motion-squad --strict
+```
+
+Motion-Agent also ships its own structural regression check:
+
+```bash
+pnpm squad:validate
+```
+
 ## Using `@motion`
 
 After installation, open the **target product repository** in Codex and work there normally.
@@ -185,7 +256,7 @@ or:
 @motion quero uma entrada premium desta tela. Preserve exatamente os componentes e ícones existentes.
 ```
 
-The managed `AGENTS.md` block tells the host agent to read the Motion Agent orchestrator skill first and to use `.motion/remotion` as the isolated preview/render workspace.
+The managed `AGENTS.md` block routes `@motion` through the task-first AIOX Motion Squad workflow first, then uses the Motion Agent skills and `.motion/remotion` runtime for implementation.
 
 ## No API key in the normal Codex workflow
 
@@ -314,7 +385,8 @@ packages/
   openai-agents/         optional standalone LLM provider
   node-tools/            ingestion, rendering and visual QA
 
-skills/custom/           project-facing Motion Agent skills
+skills/custom/           project-facing Motion Agent runtime skills
+squads/motion-squad/     AIOX task-first motion governance and asset gates
 vendor/remotion-skills/  official Remotion skills source reference
 installer/template/motion/template-recipes.json  official template catalog + routing rules
 ```
@@ -334,6 +406,8 @@ Useful development commands:
 
 ```bash
 pnpm installer:smoke
+pnpm installer:package-smoke
+pnpm squad:validate
 pnpm tools:smoke
 pnpm demo
 pnpm demo:command
