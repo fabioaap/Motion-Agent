@@ -11,7 +11,7 @@ const MANAGED_START = "<!-- motion-agent:start -->";
 const MANAGED_END = "<!-- motion-agent:end -->";
 const GITIGNORE_START = "# motion-agent:start";
 const GITIGNORE_END = "# motion-agent:end";
-const CUSTOM_SKILLS = ["motion-orchestrator", "asset-fidelity", "scene-director", "motion-qa"];
+const CUSTOM_SKILLS = ["motion-orchestrator", "template-router", "asset-fidelity", "scene-director", "motion-qa"];
 
 function usage() {
   console.log(`Motion Agent ${VERSION}\n\nUsage:\n  motion-agent init [--target <dir>] [--skip-install] [--skip-remotion-skills] [--force]\n  motion-agent update [--target <dir>] [--skip-install] [--skip-remotion-skills]\n  motion-agent doctor [--target <dir>] [--deep] [--json]\n  motion-agent uninstall [--target <dir>]\n  motion-agent version\n\nRecommended from another repository:\n  pnpm dlx github:fabioaap/Motion-Agent init\n`);
