@@ -238,7 +238,7 @@ const CampaignPanel: React.FC<{f: number}> = ({f}) => {
       <Layer progress={action} y={10}>
         <div style={{marginTop: 24, display: "flex", alignItems: "center", gap: 12, color: MUTED, fontSize: 17}}>
           <span style={{width: 10, height: 10, borderRadius: "50%", background: GREEN}} />
-          clique conectado à conversa
+          origem conectada
         </div>
       </Layer>
     </Surface>
@@ -263,7 +263,12 @@ const MessageBubble: React.FC<{side: "left" | "right"; progress: number; label: 
         fontSize: 17
       }}
     >
-      {label}
+      {label.trim() ? label : (
+        <div style={{display: "grid", gap: 7}}>
+          <span style={{display: "block", width: "82%", height: 8, borderRadius: 99, background: "rgba(255,255,255,.58)"}} />
+          <span style={{display: "block", width: "56%", height: 8, borderRadius: 99, background: "rgba(255,255,255,.28)"}} />
+        </div>
+      )}
     </div>
   </Layer>
 );
@@ -280,9 +285,9 @@ const MessagesPanel: React.FC<{f: number}> = ({f}) => (
       </div>
     </Layer>
     <div style={{marginTop: 36, display: "grid", gap: 17}}>
-      <MessageBubble side="left" progress={p(f, 10, 26)} label="Mensagem recebida" />
-      <MessageBubble side="right" progress={p(f, 22, 38)} label="Resposta enviada" />
-      <MessageBubble side="left" progress={p(f, 34, 52)} label="Conversa em andamento" />
+      <MessageBubble side="left" progress={p(f, 10, 26)} label=" " />
+      <MessageBubble side="right" progress={p(f, 22, 38)} label=" " />
+      <MessageBubble side="left" progress={p(f, 34, 52)} label=" " />
     </div>
   </Surface>
 );
