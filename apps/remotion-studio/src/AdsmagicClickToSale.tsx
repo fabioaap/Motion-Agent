@@ -394,7 +394,7 @@ const DashboardMotion: React.FC<{f: number}> = ({f}) => {
   );
 };
 
-const CinematicPlate: React.FC<{source: string; f: number; duration?: number; dim?: number; blur?: number}> = (props) => (
+const CinematicPlate: React.FC<{source: string; f: number; duration?: number; dim?: number; blur?: number; flat?: boolean}> = (props) => (
   <SpatialPlate {...props} />
 );
 
@@ -649,7 +649,7 @@ const Scene1: React.FC<{f: number}> = ({f}) => (
 
 const Scene2: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
-    <CinematicPlate source="adsmagic-do-clique-a-venda/ad.webp" f={f} duration={60} dim={0.78} blur={0.65} />
+    <CinematicPlate source="adsmagic-do-clique-a-venda/ad.webp" f={f} duration={60} dim={0.78} blur={0.65} flat />
     <JourneyHighlight progress={p(f, 0, 54, soft)} opacity={0.74} />
     <ClickMarker progress={p(f, 14, 40)} x={910} y={612} />
   </AbsoluteFill>
