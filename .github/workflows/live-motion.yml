@@ -44,6 +44,7 @@ jobs:
       - name: Run live @motion graph
         run: pnpm motion -- "${{ inputs.prompt }}" --asset apps/remotion-studio/public/demo/dashboard.svg --approve
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: live-motion-output
           path: |
@@ -51,3 +52,4 @@ jobs:
             apps/remotion-studio/out/qa/**/*
             apps/remotion-studio/jobs/generated/*.json
           if-no-files-found: warn
+          retention-days: 3
