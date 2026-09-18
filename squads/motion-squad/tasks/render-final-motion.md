@@ -1,43 +1,76 @@
+#### Step 8: Render Final Motion
+
 task: renderFinalMotion()
-responsible: remotion-builder
-responsible_type: Agent
-atomic_layer: Delivery
-elicit: true
+responsável: Remotion Builder
+responsavel_type: Agente
+atomic_layer: Media
 
-inputs:
-- field: qa_result
-  type: string
-  source: Workflow Context
-  required: true
-- field: human_approval
-  type: boolean
-  source: User Input
-  required: true
-- field: render_settings
-  type: object
-  source: Workflow Context
-  required: true
+**Entrada:**
+- campo: qaResult
+  tipo: string
+  origem: Step 7 (reviewMotionScene)
+  obrigatório: true
+- campo: humanApproval
+  tipo: boolean
+  origem: user input
+  obrigatório: true
+- campo: renderSettings
+  tipo: object
+  origem: workflow state
+  obrigatório: true
 
-outputs:
-- field: final_render
-  type: file
-  destination: .motion/remotion/out
-  persisted: true
-- field: delivery_notes
-  type: object
-  destination: Workflow Context
-  persisted: true
+**Saída:**
+- campo: finalRender
+  tipo: string (file path)
+  destino: output
+  persistido: true
+- campo: deliveryNotes
+  tipo: object
+  destino: output
+  persistido: true
 
-# Procedure
+**Checklist:**
+  pre-conditions:
+    - [ ] QA is READY_FOR_HUMAN
+      tipo: pre-condition
+      blocker: true
+      validação: "qaResult == 'READY_FOR_HUMAN'"
+    - [ ] Human explicitly approved the preview
+      tipo: pre-condition
+      blocker: true
+      validação: "humanApproval == true"
+  post-conditions:
+    - [ ] Final render completed
+      tipo: post-condition
+      blocker: true
+      validação: "finalRender != null"
+    - [ ] Final technical validation passed
+      tipo: post-condition
+      blocker: true
+      validação: "finalTechnicalValidation == 'PASS'"
+  acceptance-criteria:
+    - [ ] Final render matches the approved preview architecture
+      tipo: acceptance
+      blocker: false
+      story: MOTION-SQUAD-001
+      manual_check: true
 
-1. Require `qa_result == READY_FOR_HUMAN`.
-2. Require explicit human approval.
-3. Render final output using approved settings.
-4. Re-run technical validation on the final render.
-5. Do not modify scene architecture after approval except to fix render-only defects.
+**Scripts:**
+- scripts/render-scene.js:
+    description: Renders the approved Remotion composition
+    language: javascript
+    version: 1.0.0
 
-# Exit Criteria
+**Error Handling:**
+- strategy: abort
+- abort_workflow: true
+- notification: log
 
-- Human approval exists.
-- Final render completes.
-- Final technical validation passes.
+**Metadata:**
+- story: MOTION-SQUAD-001
+- version: 1.0.0
+- dependencies: [Step 7]
+- breaking_changes: []
+- author: Motion Agent
+- created_at: 2026-09-18
+- updated_at: 2026-09-18
