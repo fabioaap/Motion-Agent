@@ -1,0 +1,39 @@
+workflow:
+  id: rebuild-after-assets
+  name: Resume a blocked motion job after missing assets arrive
+  entry_task: audit-scene-topology.md
+
+  sequence:
+    - step: re-audit
+      task: audit-scene-topology.md
+      agent: asset-intake-specialist
+
+    - step: gate
+      checklist: missing-assets-gate.md
+
+    - step: stop-if-still-blocked
+      task: request-missing-assets.md
+      agent: asset-intake-specialist
+      condition: layerability_status == BLOCKED_MISSING_ASSETS
+      stop_on_success: true
+      terminal_status: WAITING_FOR_ASSETS
+
+    - step: strategy
+      task: resolve-motion-strategy.md
+      agent: motion-director
+
+    - step: template
+      task: resolve-template.md
+      agent: template-resolver
+
+    - step: build
+      task: build-motion-scene.md
+      agent: remotion-builder
+
+    - step: qa
+      task: review-motion-scene.md
+      agent: motion-qa
+
+    - step: human-gate
+      checklist: ready-for-human-checklist.md
+      terminal_status: READY_FOR_HUMAN
