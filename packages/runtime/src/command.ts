@@ -85,6 +85,10 @@ export function parseMotionCommand(
   });
 }
 
+function inferComponentMotionRequired(request: string): boolean {
+  return /(camad|element|component|separad|interface|dashboard|\bui\b|card|cursor|bot[aã]o|texto|produto|product)/i.test(request);
+}
+
 function extension(name: string): string {
   const part = name.split(".").pop();
   return part && part !== name ? part.toUpperCase() : "UNKNOWN";
@@ -106,6 +110,7 @@ export function createInitialContextFromCommand(command: MotionCommand): JobCont
         : "Discover the user's intent and define the motion project interactively",
       message: "",
       materials: attachmentNames,
+      component_motion_required: inferComponentMotionRequired(request),
       user_direction_level:
         command.mode === "AUTONOMOUS"
           ? hasRequest ? "HIGH" : "LOW"
