@@ -1,60 +1,84 @@
+#### Step 3: Request Missing Assets
+
 task: requestMissingAssets()
-responsible: asset-intake-specialist
-responsible_type: Agent
-atomic_layer: Elicitation
-elicit: true
+responsável: Asset Intake Specialist
+responsavel_type: Agente
+atomic_layer: Content
 
-inputs:
-- field: element_inventory
-  type: array
-  source: Workflow Context
-  required: true
-- field: missing_assets
-  type: array
-  source: Workflow Context
-  required: true
-- field: reconstructable_elements
-  type: array
-  source: Workflow Context
-  required: true
-- field: layerability_status
-  type: string
-  source: Workflow Context
-  required: true
+**Entrada:**
+- campo: elementInventory
+  tipo: array
+  origem: Step 2 (auditSceneTopology)
+  obrigatório: true
+- campo: missingAssets
+  tipo: array
+  origem: Step 2 (auditSceneTopology)
+  obrigatório: true
+- campo: reconstructableElements
+  tipo: array
+  origem: Step 2 (auditSceneTopology)
+  obrigatório: true
+- campo: layerabilityStatus
+  tipo: string
+  origem: Step 2 (auditSceneTopology)
+  obrigatório: true
 
-outputs:
-- field: asset_request
-  type: string
-  destination: User
-  persisted: true
-- field: workflow_status
-  type: string
-  destination: Workflow Context
-  persisted: true
+**Saída:**
+- campo: assetRequest
+  tipo: string
+  destino: user
+  persistido: true
+- campo: workflowStatus
+  tipo: string
+  destino: workflow state
+  persistido: true
 
-# Procedure
+**Checklist:**
+  pre-conditions:
+    - [ ] layerabilityStatus requires user input
+      tipo: pre-condition
+      blocker: true
+      validação: "['BLOCKED_MISSING_ASSETS','FLAT_MOTION_ONLY'].includes(layerabilityStatus)"
+  post-conditions:
+    - [ ] Request states exactly which assets are missing
+      tipo: post-condition
+      blocker: true
+      validação: "missingAssets.every(asset => assetRequest.includes(asset.name || asset.elementId))"
+    - [ ] User is told that continuing without critical assets would create flat slide-like motion
+      tipo: post-condition
+      blocker: true
+      validação: "assetRequest.includes('slide') || assetRequest.includes('chapada')"
+    - [ ] Workflow is waiting for assets or explicit flat-motion authorization
+      tipo: post-condition
+      blocker: true
+      validação: "['WAITING_FOR_ASSETS','WAITING_FOR_USER_DECISION'].includes(workflowStatus)"
+  acceptance-criteria:
+    - [ ] The user can act on the request without asking what file is needed
+      tipo: acceptance
+      blocker: false
+      story: MOTION-SQUAD-001
+      manual_check: true
 
-1. Use `asset-request-response.md`.
-2. Tell the user:
-   - what you understood;
-   - what must move independently;
-   - what already exists;
-   - what can be reconstructed;
-   - the exact assets still needed;
-   - what is blocked without them.
-3. Ask only for critical missing assets. Do not ask for assets the repository already contains.
-4. Prefer exact actionable requests such as:
-   - "card do WhatsApp recortado em PNG/WebP transparente";
-   - "SVG original do ícone";
-   - "frame de notebook sem fundo".
-5. Explain that continuing without these assets would create flat slide motion.
-6. Set workflow status to `WAITING_FOR_ASSETS`.
-7. HARD STOP. Do not route to build.
-8. Resume only when the missing assets are supplied or the user explicitly authorizes `FLAT_MOTION_ONLY`.
+**Template:**
+- path: templates/asset-request-response.md
+  type: output
+  version: 1.0.0
+  variables: [sceneSummary, elementsThatMustMove, availableAssets, reconstructableElements, missingAssets, blockedItems, nextAction]
 
-# Exit Criteria
+**Error Handling:**
+- strategy: abort
+- abort_workflow: true
+- notification: log
 
-- User received a precise asset shopping list.
-- Blocked elements are named.
-- Workflow is `WAITING_FOR_ASSETS`.
-- No motion build was produced.
+**Metadata:**
+- story: MOTION-SQUAD-001
+- version: 1.0.0
+- dependencies: [Step 2]
+- breaking_changes: []
+- author: Motion Agent
+- created_at: 2026-09-18
+- updated_at: 2026-09-18
+
+**Execution Rule:**
+
+HARD STOP after producing the request. Do not route to build until the missing assets arrive or the user explicitly authorizes flat motion.
