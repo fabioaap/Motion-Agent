@@ -178,6 +178,221 @@ const Signal: React.FC<{progress: number; y?: number; from?: number; to?: number
   );
 };
 
+const JourneyHighlight: React.FC<{progress: number; opacity?: number}> = ({progress, opacity = 0.84}) => {
+  const dash = interpolate(progress, [0, 1], [1, 0], clamp);
+  const dotX = interpolate(progress, [0, 1], [170, 1745], clamp);
+  const dotY = interpolate(progress, [0, 0.28, 0.55, 0.78, 1], [626, 560, 610, 530, 565], clamp);
+  return (
+    <AbsoluteFill style={{pointerEvents: "none", opacity}}>
+      <svg width="1920" height="1080" viewBox="0 0 1920 1080" style={{position: "absolute", inset: 0}}>
+        <path
+          d="M170 626 C420 615 520 540 760 560 C980 578 1110 638 1320 590 C1500 548 1580 520 1745 565"
+          fill="none"
+          stroke="rgba(59,181,109,.22)"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+        <path
+          d="M170 626 C420 615 520 540 760 560 C980 578 1110 638 1320 590 C1500 548 1580 520 1745 565"
+          fill="none"
+          stroke={GREEN}
+          strokeWidth="4"
+          strokeLinecap="round"
+          pathLength="1"
+          strokeDasharray="1"
+          strokeDashoffset={dash}
+        />
+      </svg>
+      <div
+        style={{
+          position: "absolute",
+          left: dotX - 6,
+          top: dotY - 6,
+          width: 12,
+          height: 12,
+          borderRadius: "50%",
+          background: GREEN,
+          border: "2px solid rgba(255,255,255,.72)"
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+
+const ClickMarker: React.FC<{progress: number; x: number; y: number}> = ({progress, x, y}) => {
+  const scale = interpolate(progress, [0, .5, 1], [.7, 1.18, 1], clamp);
+  const alpha = interpolate(progress, [0, .2, .8, 1], [0, .9, .56, 0], clamp);
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: x - 25,
+        top: y - 25,
+        width: 50,
+        height: 50,
+        borderRadius: "50%",
+        border: `2px solid rgba(59,181,109,${alpha})`,
+        transform: `scale(${scale})`,
+        opacity: alpha,
+        zIndex: 12
+      }}
+    />
+  );
+};
+
+const MessageMotion: React.FC<{f: number}> = ({f}) => {
+  const bubbles = [
+    {x: 1035, y: 415, w: 250, green: false, start: 4},
+    {x: 1115, y: 488, w: 285, green: true, start: 16},
+    {x: 1015, y: 565, w: 235, green: false, start: 29}
+  ];
+  return (
+    <>
+      {bubbles.map((b, i) => {
+        const pr = p(f, b.start, b.start + 18);
+        const y = interpolate(pr, [0, 1], [b.y + 18, b.y], clamp);
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: b.x,
+              top: y,
+              width: b.w,
+              height: 42,
+              borderRadius: 16,
+              opacity: pr * .92,
+              background: b.green ? "rgba(59,181,109,.36)" : "rgba(255,255,255,.12)",
+              border: `1px solid ${b.green ? "rgba(59,181,109,.55)" : "rgba(255,255,255,.18)"}`,
+              backdropFilter: "blur(3px)"
+            }}
+          />
+        );
+      })}
+    </>
+  );
+};
+
+const EventMotion: React.FC<{f: number}> = ({f}) => {
+  const nodes = [
+    {x: 1020, y: 405, start: 4},
+    {x: 1120, y: 482, start: 16},
+    {x: 1225, y: 556, start: 28},
+    {x: 1340, y: 620, start: 40}
+  ];
+  return (
+    <>
+      <svg width="1920" height="1080" style={{position: "absolute", inset: 0}}>
+        <path
+          d="M1020 405 C1090 430 1065 465 1120 482 C1180 500 1162 540 1225 556 C1280 570 1290 605 1340 620"
+          fill="none"
+          stroke="rgba(59,181,109,.58)"
+          strokeWidth="3"
+          strokeLinecap="round"
+          pathLength="1"
+          strokeDasharray="1"
+          strokeDashoffset={interpolate(p(f, 4, 60, soft), [0,1], [1,0], clamp)}
+        />
+      </svg>
+      {nodes.map((n, i) => {
+        const pr = p(f, n.start, n.start + 16);
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: n.x - 8,
+              top: n.y - 8,
+              width: 16,
+              height: 16,
+              borderRadius: "50%",
+              background: GREEN,
+              border: "2px solid rgba(255,255,255,.62)",
+              transform: `scale(${interpolate(pr,[0,1],[.6,1],clamp)})`,
+              opacity: pr
+            }}
+          />
+        );
+      })}
+    </>
+  );
+};
+
+const SuccessMotion: React.FC<{f: number}> = ({f}) => {
+  const pr = p(f, 10, 36);
+  const ring = interpolate(pr, [0, .55, 1], [.72, 1.08, 1], clamp);
+  return (
+    <>
+      <div
+        style={{
+          position: "absolute",
+          left: 1362,
+          top: 334,
+          width: 116,
+          height: 116,
+          borderRadius: "50%",
+          border: "2px solid rgba(59,181,109,.58)",
+          transform: `scale(${ring})`,
+          opacity: pr * .72
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: 1402,
+          top: 370,
+          color: GREEN,
+          fontSize: 42,
+          fontWeight: 900,
+          opacity: p(f, 20, 42)
+        }}
+      >
+        ✓
+      </div>
+    </>
+  );
+};
+
+const DashboardMotion: React.FC<{f: number}> = ({f}) => {
+  const draw = interpolate(p(f, 12, 68, soft), [0,1], [100,0], clamp);
+  return (
+    <>
+      <svg width="1920" height="1080" style={{position: "absolute", inset: 0}}>
+        <path
+          d="M1240 710 C1310 690 1340 646 1408 658 C1470 670 1500 615 1560 622 C1620 630 1660 578 1730 590"
+          fill="none"
+          stroke={GREEN}
+          strokeWidth="4"
+          strokeLinecap="round"
+          pathLength="100"
+          strokeDasharray="100"
+          strokeDashoffset={draw}
+          opacity=".86"
+        />
+      </svg>
+      {[1188, 1350, 1512].map((x, i) => {
+        const pr = p(f, 20 + i * 9, 42 + i * 9);
+        return (
+          <div
+            key={x}
+            style={{
+              position: "absolute",
+              left: x,
+              top: 467 + i * 3,
+              width: 10,
+              height: 10,
+              borderRadius: "50%",
+              background: i === 1 ? CYAN : GREEN,
+              opacity: pr,
+              transform: `scale(${interpolate(pr,[0,1],[.5,1],clamp)})`
+            }}
+          />
+        );
+      })}
+    </>
+  );
+};
+
 const CinematicPlate: React.FC<{source: string; f: number; duration?: number; dim?: number; blur?: number}> = ({
   source,
   f,
@@ -453,116 +668,71 @@ const DashboardPanel: React.FC<{f: number}> = ({f}) => (
 
 const Scene1: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
-    <CinematicPlate source="adsmagic-do-clique-a-venda/hook.webp" f={f} duration={60} dim={0.68} blur={1.5} />
-    <div style={{position: "absolute", left: 128, top: 154}}>
-      <Layer progress={p(f, -10, 10)} y={12}><Kicker>Signal Convergence</Kicker></Layer>
-      <Layer progress={p(f, -6, 18)} y={22} scaleFrom={0.992}><Headline>Do clique <span style={{color: GREEN}}>à venda.</span></Headline></Layer>
-      <Layer progress={p(f, 6, 28)} y={18}><Body>Uma única jornada conectando mídia, conversa, contexto e resultado.</Body></Layer>
-    </div>
-    <Signal progress={p(f, -6, 48, soft)} />
+    <CinematicPlate source="adsmagic-do-clique-a-venda/hook.webp" f={f} duration={60} dim={0.82} blur={0.45} />
+    <JourneyHighlight progress={p(f, -8, 50, soft)} />
+    <ClickMarker progress={p(f, 18, 42)} x={790} y={555} />
   </AbsoluteFill>
 );
 
 const Scene2: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
-    <CinematicPlate source="adsmagic-do-clique-a-venda/ad.webp" f={f} duration={60} dim={0.56} blur={2.4} />
-    <div style={{position: "absolute", left: 112, top: 130}}>
-      <Layer progress={p(f, 0, 16)}><Kicker>Origem</Kicker></Layer>
-      <Layer progress={p(f, 5, 22)}><Headline size={48} width={530}>O sinal começa na campanha.</Headline></Layer>
-    </div>
-    <div style={{position: "absolute", right: 95, top: 218, perspective: 1400, transform: "rotateY(-4deg) rotateX(1deg)"}}>
-      <Layer progress={p(f, 8, 30)} x={34} y={8}><CampaignPanel f={f} /></Layer>
-    </div>
-    <Signal progress={p(f, 0, 54, soft)} y={900} />
+    <CinematicPlate source="adsmagic-do-clique-a-venda/ad.webp" f={f} duration={60} dim={0.78} blur={0.65} />
+    <JourneyHighlight progress={p(f, 0, 54, soft)} opacity={0.74} />
+    <ClickMarker progress={p(f, 14, 40)} x={910} y={612} />
   </AbsoluteFill>
 );
 
 const Scene3: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
-    <CinematicPlate source="adsmagic-do-clique-a-venda/click.webp" f={f} duration={60} dim={0.58} blur={2.2} />
-    <div style={{position: "absolute", left: 90, top: 190, transform: "scale(.78)", transformOrigin: "top left"}}>
-      <Layer progress={p(f, 0, 16)} x={-20} y={0}><CampaignPanel f={40} /></Layer>
-    </div>
-    <div style={{position: "absolute", right: 115, top: 165, transform: "scale(.78)", transformOrigin: "top right"}}>
-      <Layer progress={p(f, 18, 42)} x={42} y={0}><MessagesPanel f={Math.max(0, f - 14)} /></Layer>
-    </div>
-    <Signal progress={p(f, 2, 50, soft)} y={550} from={610} to={1340} />
+    <CinematicPlate source="adsmagic-do-clique-a-venda/click.webp" f={f} duration={60} dim={0.79} blur={0.7} />
+    <JourneyHighlight progress={p(f, 0, 54, soft)} opacity={0.82} />
+    <ClickMarker progress={p(f, 4, 28)} x={760} y={548} />
+    <ClickMarker progress={p(f, 22, 48)} x={1320} y={545} />
   </AbsoluteFill>
 );
 
 const Scene4: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
-    <CinematicPlate source="adsmagic-do-clique-a-venda/conversation.webp" f={f} duration={75} dim={0.57} blur={2.3} />
-    <div style={{position: "absolute", left: 128, top: 150}}>
-      <Layer progress={p(f, 0, 16)}><Kicker>Conversa</Kicker></Layer>
-      <Layer progress={p(f, 5, 22)}><Headline size={46} width={560}>A origem continua dentro do atendimento.</Headline></Layer>
-    </div>
-    <div style={{position: "absolute", right: 110, top: 220, perspective: 1400, transform: "rotateY(-3deg)"}}>
-      <MessagesPanel f={f} />
-    </div>
-    <Signal progress={p(f, 5, 68, soft)} y={900} />
+    <CinematicPlate source="adsmagic-do-clique-a-venda/conversation.webp" f={f} duration={75} dim={0.80} blur={0.65} />
+    <MessageMotion f={f} />
+    <JourneyHighlight progress={p(f, 4, 68, soft)} opacity={0.74} />
   </AbsoluteFill>
 );
 
 const Scene5: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
-    <CinematicPlate source="adsmagic-do-clique-a-venda/context.webp" f={f} duration={75} dim={0.57} blur={2.1} />
-    <div style={{position: "absolute", left: 115, top: 140}}>
-      <Layer progress={p(f, 0, 16)}><Kicker>Contexto + evento</Kicker></Layer>
-      <Layer progress={p(f, 5, 24)}><Headline size={46} width={600}>A conversa vira contexto rastreável.</Headline></Layer>
-    </div>
-    <div style={{position: "absolute", right: 105, top: 235, perspective: 1400, transform: "rotateY(-3deg)"}}>
-      <ContactContextPanel f={f} />
-    </div>
-    <Signal progress={p(f, 6, 70, soft)} y={895} />
+    <CinematicPlate source="adsmagic-do-clique-a-venda/context.webp" f={f} duration={75} dim={0.80} blur={0.6} />
+    <EventMotion f={f} />
+    <JourneyHighlight progress={p(f, 5, 70, soft)} opacity={0.72} />
   </AbsoluteFill>
 );
 
 const Scene6: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
-    <CinematicPlate source="adsmagic-do-clique-a-venda/order.webp" f={f} duration={75} dim={0.58} blur={2.0} />
-    <div style={{position: "absolute", left: 120, top: 160}}>
-      <Layer progress={p(f, 0, 16)}><Kicker>Conversão</Kicker></Layer>
-      <Layer progress={p(f, 5, 24)}><Headline size={48} width={560}>O resultado fecha a trajetória.</Headline></Layer>
-      <Layer progress={p(f, 14, 34)}><Body width={610}>A venda passa a pertencer ao mesmo percurso que começou no anúncio.</Body></Layer>
-    </div>
-    <div style={{position: "absolute", right: 110, top: 245, perspective: 1400, transform: "rotateY(-3deg)"}}>
-      <SalePanel f={f} />
-    </div>
-    <Signal progress={p(f, 4, 68, soft)} y={900} />
+    <CinematicPlate source="adsmagic-do-clique-a-venda/order.webp" f={f} duration={75} dim={0.82} blur={0.55} />
+    <SuccessMotion f={f} />
+    <JourneyHighlight progress={p(f, 4, 68, soft)} opacity={0.78} />
   </AbsoluteFill>
 );
 
 const Scene7: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
-    <CinematicPlate source="adsmagic-do-clique-a-venda/overview.webp" f={f} duration={90} dim={0.52} blur={2.7} />
-    <div style={{position: "absolute", left: 120, top: 85}}>
-      <Layer progress={p(f, 0, 14)}><Kicker>Inteligência consolidada</Kicker></Layer>
-    </div>
-    <div style={{position: "absolute", left: 330, top: 185, perspective: 1600, transform: "rotateX(1.5deg)"}}>
-      <Layer progress={p(f, 5, 28)} y={24} scaleFrom={0.975}><DashboardPanel f={f} /></Layer>
-    </div>
-    <Signal progress={p(f, 6, 82, soft)} y={940} />
+    <CinematicPlate source="adsmagic-do-clique-a-venda/overview.webp" f={f} duration={90} dim={0.78} blur={0.75} />
+    <DashboardMotion f={f} />
+    <JourneyHighlight progress={p(f, 5, 82, soft)} opacity={0.72} />
   </AbsoluteFill>
 );
 
 const Scene8: React.FC<{f: number}> = ({f}) => (
-  <AbsoluteFill style={{display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center"}}>
-    <CinematicPlate source="adsmagic-do-clique-a-venda/hook.webp" f={f} duration={45} dim={0.48} blur={3.6} />
-    <div>
-      <Layer progress={p(f, 0, 18)} y={18}>
-        <Img src={staticFile("adsmagic-do-clique-a-venda/logo-wordmark-white.svg")} style={{width: 300}} />
-      </Layer>
-      <Layer progress={p(f, 6, 26)} y={24}>
-        <div style={{marginTop: 38, color: WHITE, fontSize: 78, fontWeight: 800, letterSpacing: -3.2}}>Do clique <span style={{color: GREEN}}>à venda.</span></div>
-      </Layer>
-      <Layer progress={p(f, 14, 34)} y={18}>
-        <div style={{marginTop: 22, color: MUTED, fontSize: 27}}>Contexto para decidir melhor onde investir.</div>
-      </Layer>
-      <div style={{position: "relative", width: 620, height: 4, margin: "52px auto 0", background: "rgba(255,255,255,.10)", borderRadius: 99, overflow: "hidden"}}>
-        <div style={{width: `${p(f, 4, 38, soft) * 100}%`, height: "100%", background: `linear-gradient(90deg,${GREEN},${CYAN})`}} />
-      </div>
-    </div>
+  <AbsoluteFill>
+    <CinematicPlate source="adsmagic-do-clique-a-venda/hook.webp" f={f} duration={45} dim={0.84} blur={0.45} />
+    <JourneyHighlight progress={p(f, -4, 30, soft)} opacity={0.88} />
+    <Layer progress={p(f, 8, 26)} y={14}>
+      <Img
+        src={staticFile("adsmagic-do-clique-a-venda/logo-wordmark-white.svg")}
+        style={{position: "absolute", width: 205, left: 1455, top: 855, opacity: .9}}
+      />
+    </Layer>
   </AbsoluteFill>
 );
 
