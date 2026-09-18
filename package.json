@@ -1,6 +1,6 @@
 {
   "name": "@fabioaap/motion-agent",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": false,
   "type": "module",
   "packageManager": "pnpm@12.4.2",
@@ -14,6 +14,7 @@
     "bin",
     "installer",
     "skills/custom",
+    "docs",
     "README.md"
   ],
   "scripts": {
