@@ -5,6 +5,14 @@ import {
   type QAIssue
 } from "./contracts.js";
 
+
+export function requiresLayerability(context: JobContext): boolean {
+  return Boolean(
+    context.brief.component_motion_required ||
+    context.decomposition?.elements.some((element) => element.requires_animation)
+  );
+}
+
 export type AggregatedQA = {
   pass: boolean;
   criticalIssues: number;
@@ -45,6 +53,9 @@ export function aggregateQA(
 
 export function requiredCriticsFor(context: JobContext): string[] {
   const critics = ["fidelity_critic"];
+  if (requiresLayerability(context)) {
+    critics.push("layerability_critic");
+  }
   if (context.metadata.visual_qa && typeof context.metadata.visual_qa === "object") {
     critics.push("visual_fidelity_critic");
   }
