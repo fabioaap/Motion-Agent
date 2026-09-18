@@ -11,3 +11,4 @@ export * from "./graph.js";
 export * from "./preview.js";
 export * from "./scene.js";
 export * from "./command.js";
+export * from "./templates.js";
