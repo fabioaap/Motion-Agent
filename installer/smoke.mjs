@@ -46,8 +46,13 @@ try {
   if (!agents.includes("Existing project instructions") || !agents.includes("motion-agent:start")) {
     throw new Error("AGENTS.md was not preserved and patched correctly");
   }
-  if (!agents.includes("flattened full-scene styleframe") || !agents.includes("Layerability Gate")) {
-    throw new Error("AGENTS.md is missing layered-motion pipeline rules");
+  if (
+    !agents.includes("flattened full-scene styleframe") ||
+    !agents.includes("Layerability Gate") ||
+    !agents.includes("template-resolver") ||
+    !agents.includes("template-recipes.json")
+  ) {
+    throw new Error("AGENTS.md is missing layered-motion or template-resolution pipeline rules");
   }
 
   const manifest = JSON.parse(await readFile(join(target, ".motion", "install-manifest.json"), "utf8"));
