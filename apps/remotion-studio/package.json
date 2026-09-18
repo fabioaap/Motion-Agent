@@ -10,7 +10,11 @@
     "render:job": "remotion render src/index.ts MotionJobPreview out/motion-job-preview.mp4 --props=jobs/example-job.json",
     "render:scene": "remotion render src/index.ts MotionScene out/motion-scene.mp4 --props=jobs/scene-job.json",
     "typecheck": "tsc --noEmit",
-    "render:adsmagic": "remotion render src/index.ts AdsmagicClickToSale out/adsmagic-do-clique-a-venda.mp4"
+    "render:adsmagic": "remotion render src/index.ts AdsmagicClickToSale out/adsmagic-do-clique-a-venda.mp4",
+    "assets:scene1": "node scripts/reconstruct-scene1-assets.mjs",
+    "studio:scene1": "pnpm run assets:scene1 && remotion studio src/index.ts",
+    "render:scene1": "pnpm run assets:scene1 && remotion render src/index.ts AdsmagicScene1Layered out/adsmagic-scene1-layered.mp4",
+    "still:scene1": "pnpm run assets:scene1 && remotion still src/index.ts AdsmagicScene1Layered out/adsmagic-scene1-layered-still.png --frame=30"
   },
   "dependencies": {
     "@motion-agent/runtime": "workspace:*",
