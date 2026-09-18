@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "defaultBuildMode": "RECONSTRUCTION_FIRST",
+  "rules": [
+    "Never animate a flattened full-scene image as component-level motion.",
+    "Always audit scene topology before build.",
+    "Always identify every major element that needs independent movement.",
+    "Request missing critical assets before build.",
+    "Allow reconstruction only when source fidelity can be verified.",
+    "Allow a flattened image as environmental background or explicitly approved flat-motion animatic.",
+    "Flat motion requires explicit user authorization.",
+    "A Remotion template never bypasses Layerability Gate.",
+    "READY_FOR_HUMAN is blocked while critical assets are missing."
+  ],
+  "statuses": [
+    "LAYERED_READY",
+    "RECONSTRUCTION_READY",
+    "BLOCKED_MISSING_ASSETS",
+    "FLAT_MOTION_ONLY"
+  ],
+  "userApprovalRequiredFor": [
+    "FLAT_MOTION_ONLY",
+    "FINAL_RENDER"
+  ]
+}
