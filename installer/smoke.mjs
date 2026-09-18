@@ -44,6 +44,23 @@ try {
   if (!agents.includes("Existing project instructions") || !agents.includes("motion-agent:start")) {
     throw new Error("AGENTS.md was not preserved and patched correctly");
   }
+  if (!agents.includes("flattened full-scene styleframe") || !agents.includes("Layerability Gate")) {
+    throw new Error("AGENTS.md is missing layered-motion pipeline rules");
+  }
+
+  const manifest = JSON.parse(await readFile(join(target, ".motion", "install-manifest.json"), "utf8"));
+  if (manifest.pipelineVersion !== "layered-motion-v1") {
+    throw new Error(`Unexpected pipeline version ${manifest.pipelineVersion ?? "missing"}`);
+  }
+
+  const orchestratorSkill = await readFile(join(target, ".agents", "skills", "motion-orchestrator", "SKILL.md"), "utf8");
+  const qaSkill = await readFile(join(target, ".agents", "skills", "motion-qa", "SKILL.md"), "utf8");
+  if (!orchestratorSkill.includes("## Layerability Gate")) {
+    throw new Error("Installed orchestrator skill is missing Layerability Gate");
+  }
+  if (!qaSkill.includes("## Layer Separation Critic")) {
+    throw new Error("Installed motion QA skill is missing Layer Separation Critic");
+  }
 
   const packageJson = JSON.parse(await readFile(join(target, "package.json"), "utf8"));
   if (packageJson.scripts.test !== "echo ok" || !packageJson.scripts["motion:studio"]) {
