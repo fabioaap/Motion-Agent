@@ -1,6 +1,6 @@
 # Motion Spec · Adsmagic · Do clique à venda
 
-Status: ANIMATIC_APPROVED → MOTION_IMPLEMENTATION
+Status: MOTION_IMPLEMENTATION → LOCAL_TEST
 
 ## Output
 - Composition: `AdsmagicClickToSale`
@@ -11,7 +11,15 @@ Status: ANIMATIC_APPROVED → MOTION_IMPLEMENTATION
 - Primary output: 16:9
 
 ## Creative lock
-The approved image styleframes are the visual source of truth. Do not reconstruct them in Figma and do not replace them with generic SaaS UI. Magnific is a visual reference library only, not an asset source.
+The approved styleframes are the visual source of truth for composition and fidelity, but they must not be animated as flattened full-scene images.
+
+For the current implementation:
+- Recreate text, shapes, signal paths, glows and other simple elements in React/SVG.
+- Use user-provided transparent cut assets for complex foreground objects that should preserve their rendered appearance.
+- Background plates may remain raster images when they are environmental scenery rather than the animated subject.
+- Every major foreground object must be independently addressable and independently animated.
+- Do not treat camera movement, zoom, parallax or Three.js applied to a flattened scene as layered motion.
+- Do not return to Figma for Scene 1 reconstruction.
 
 ## Timeline
 1. Hook: 0–60
@@ -31,6 +39,48 @@ The approved image styleframes are the visual source of truth. Do not reconstruc
 - No bouncing UI, no decorative particle storm, no generic kinetic typography.
 - Preserve the green signal line already designed into the frames.
 - Motion must reinforce continuity from ad → conversation → event → sale → consolidated view.
+
+
+## Scene 1 · layered local test
+Scene 1 is the first scene being rebuilt with true layer separation.
+
+Composition: `AdsmagicScene1Layered`  
+Duration: 60 frames / 2 s  
+Canvas: 1920×1080 / 30 fps
+
+Layer contract:
+- raster background plate with laptop and atmosphere
+- React headline: `Do clique` + `à venda.`
+- independent transparent ad card asset
+- independent cursor asset
+- independent transparent WhatsApp card asset
+- independent transparent tracking card asset
+- React/SVG Green Signal with animated path and travelling point
+- no full-scene bitmap used as the animated foreground
+
+Local commands from repository root:
+
+```bash
+pnpm install
+pnpm --filter @motion-agent/remotion-studio assets:scene1
+pnpm --filter @motion-agent/remotion-studio studio:scene1
+```
+
+In Remotion Studio, choose `AdsmagicScene1Layered`.
+
+Direct render:
+
+```bash
+pnpm --filter @motion-agent/remotion-studio render:scene1
+pnpm --filter @motion-agent/remotion-studio still:scene1
+```
+
+Generated outputs:
+- `apps/remotion-studio/out/adsmagic-scene1-layered.mp4`
+- `apps/remotion-studio/out/adsmagic-scene1-layered-still.png`
+
+Current gate: **LOCAL_TEST**.  
+Do not mark the full 18 s motion as READY_FOR_HUMAN until the layered reconstruction is accepted scene by scene.
 
 ## QA gates
 - Fidelity Critic
