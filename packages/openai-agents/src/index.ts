@@ -12,6 +12,7 @@ import {
   MotionSpecSchema,
   QAReportSchema,
   VideoBriefSchema,
+  LayerabilityCriticHandler,
   VisualFidelityCriticHandler,
   type AgentHandler,
   type AgentName,
@@ -66,6 +67,8 @@ Creativity may be bold. Fidelity may not be approximate.
 Never replace an original logo, icon, component, SVG, typeface, chart or UI element with a merely similar substitute.
 Prefer USE_ORIGINAL, REUSE_SVG, REUSE_COMPONENT or HYBRID over approximate reconstruction.
 Motion must communicate causality and hierarchy, not decorate randomly.
+When component-level motion is required, a flattened full-scene styleframe is reference material only. Camera movement, parallax, zoom, blur or 3D displacement applied to the flattened scene do not count as independent component motion.
+Every major animated foreground object must be independently addressable through source components, SVG, transparent assets, cutouts, verified masks or faithful React/SVG reconstruction.
 Make the smallest correction required. Do not redesign locked or unrelated scope.
 When exact source material is required but unavailable, prefer REQUEST_SOURCE rather than inventing it.
 Return only the requested structured output.
@@ -172,6 +175,7 @@ class MotionAgentHandler implements AgentHandler {
     switch (this.name) {
       case "director": return this.direct(context);
       case "asset_inspector": return this.inspectAssets(context);
+      case "decomposition_agent": return this.inspectAssets(context);
       case "source_asset_agent": return this.resolveSources(context);
       case "creative_reference_agent": return this.creativeDirections(context);
       case "motion_director": return this.motionDirection(context);
@@ -181,6 +185,7 @@ class MotionAgentHandler implements AgentHandler {
       case "composition_critic":
       case "brand_critic": return this.critic(context);
       case "technical_validator": return this.technical(context);
+      case "layerability_critic": return new LayerabilityCriticHandler().run(context);
       case "visual_fidelity_critic": return new VisualFidelityCriticHandler().run(context);
       case "motion_specialist":
       case "ui_react_specialist":
@@ -190,7 +195,6 @@ class MotionAgentHandler implements AgentHandler {
       case "remotion_specialist": return this.repairOrBuild(context);
       case "render_agent": return this.renderReady(context);
       case "context_router":
-      case "decomposition_agent":
       case "regression_checker": return {context};
       default: return {context};
     }
@@ -205,6 +209,9 @@ class MotionAgentHandler implements AgentHandler {
     );
     const next = structuredClone(context);
     next.brief = VideoBriefSchema.parse({...payload, job_id: context.job_id});
+    if (context.brief.component_motion_required) {
+      next.brief.component_motion_required = true;
+    }
     return {context: JobContextSchema.parse(next)};
   }
 
@@ -213,7 +220,7 @@ class MotionAgentHandler implements AgentHandler {
     const payload = await this.brain.structured(
       DecompositionPayloadSchema,
       "motion_asset_decomposition",
-      `Audit the supplied assets and decide a fidelity safe decomposition. Use only source_asset_id values that exist in the manifest. If a raster screenshot can be animated without rebuilding internal UI, use USE_ORIGINAL. If only selected UI pieces need behavior, prefer HYBRID. Never choose reconstruction merely for convenience.`,
+      `Audit the supplied assets, define the scene topology and decide a fidelity-safe decomposition. Use only source_asset_id values that exist in the manifest. If component_motion_required is true, every major moving foreground element must appear in layer_map and be independently_addressable. A full-scene raster styleframe may be BACKGROUND_PLATE or visual reference, but it must not stand in for multiple moving foreground elements. Use FLATTENED_STYLEFRAME only to explicitly flag an unresolved flattened foreground. Set layerability_status=LAYERED_READY and layer_map_verified=true only when the planned source structure genuinely supports independent component motion. If source is missing, use REQUEST_SOURCE and BLOCKED_MISSING_SOURCE. If decomposition is still required, use DECOMPOSITION_REQUIRED. Prefer exact source components, SVGs, transparent assets, cutouts and faithful React/SVG reconstruction. Never choose reconstruction merely for convenience.`,
       contextForPrompt(context),
       images
     );
@@ -369,6 +376,10 @@ class MotionAgentHandler implements AgentHandler {
       assets_used: next.assets?.assets.map((asset) => asset.asset_id) ?? [],
       components_created: [],
       components_reused: reused,
+      independent_layers: next.decomposition?.layer_map
+        .filter((layer) => layer.independently_addressable)
+        .map((layer) => layer.element_id) ?? [],
+      flattened_foreground_used: next.decomposition?.full_scene_flattened_foreground ?? false,
       known_limitations: []
     });
     return {context: JobContextSchema.parse(next)};
@@ -461,6 +472,7 @@ export function createOpenAIAgentRegistry(options: OpenAIAgentRegistryOptions = 
     "brand_system_specialist",
     "fidelity_critic",
     "visual_fidelity_critic",
+    "layerability_critic",
     "motion_critic",
     "composition_critic",
     "brand_critic",
