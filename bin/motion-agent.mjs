@@ -7,6 +7,7 @@ import {fileURLToPath} from "node:url";
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packageJson = JSON.parse(await readFile(join(PACKAGE_ROOT, "package.json"), "utf8"));
 const VERSION = packageJson.version ?? "0.0.0";
+const PIPELINE_VERSION = "layered-motion-v1";
 const MANAGED_START = "<!-- motion-agent:start -->";
 const MANAGED_END = "<!-- motion-agent:end -->";
 const GITIGNORE_START = "# motion-agent:start";
@@ -129,6 +130,7 @@ async function writeManifest(target) {
   const manifest = {
     schemaVersion: 1,
     installerVersion: VERSION,
+    pipelineVersion: PIPELINE_VERSION,
     mode: "codex",
     installedAt: new Date().toISOString(),
     managedPaths: [
@@ -145,7 +147,7 @@ async function configureProject(target) {
     join(target, "AGENTS.md"),
     MANAGED_START,
     MANAGED_END,
-    `## Motion Agent\n\nWhen a request starts with \`@motion\` or explicitly asks for Motion Agent, read \`.agents/skills/motion-orchestrator/SKILL.md\` first. Work in this repository's real product context and reuse its exact components, SVGs, fonts, design tokens and assets before reconstructing anything. Use \`.motion/remotion\` as the isolated preview/render workspace. Run fidelity, motion, composition and regression QA before presenting a preview. Do not require an OpenAI API key in Codex mode. Keep the human approval gate before final delivery.`
+    `## Motion Agent\n\nWhen a request starts with \`@motion\` or explicitly asks for Motion Agent, read \`.agents/skills/motion-orchestrator/SKILL.md\` first. Work in this repository's real product context and reuse its exact components, SVGs, fonts, design tokens and assets before reconstructing anything. Run Scene Topology Audit and the Layerability Gate before implementation whenever component-level motion is expected. A flattened full-scene styleframe may be a visual reference, but camera movement, parallax, zoom, blur or Three.js displacement applied to it do not count as independent component motion. Use \`.motion/remotion\` as the isolated preview/render workspace. Run fidelity, layer separation, motion, composition and regression QA before presenting a preview. Do not require an OpenAI API key in Codex mode. Keep the human approval gate before final delivery.`
   );
   await upsertManagedBlock(
     join(target, ".gitignore"),
@@ -193,12 +195,19 @@ async function doctor(target, flags) {
   add("Node >= 22", Number(process.versions.node.split(".")[0]) >= 22, process.versions.node);
   const pnpm = spawnSync("pnpm", ["--version"], {cwd: target, encoding: "utf8", shell: process.platform === "win32"});
   add("pnpm available", pnpm.status === 0, (pnpm.stdout || pnpm.stderr || "not found").trim());
-  add("install manifest", await exists(join(target, ".motion", "install-manifest.json")), ".motion/install-manifest.json");
+  const manifestPath = join(target, ".motion", "install-manifest.json");
+  add("install manifest", await exists(manifestPath), ".motion/install-manifest.json");
+  const manifest = JSON.parse(await readText(manifestPath, "{}"));
+  add("pipeline version", manifest.pipelineVersion === PIPELINE_VERSION, manifest.pipelineVersion ?? "missing");
   add("Motion config", await exists(join(target, ".motion", "config.json")), ".motion/config.json");
   add("Remotion workspace", await exists(join(target, ".motion", "remotion", "package.json")), ".motion/remotion/package.json");
   for (const skill of CUSTOM_SKILLS) {
     add(`skill:${skill}`, await exists(join(target, ".agents", "skills", skill, "SKILL.md")), `.agents/skills/${skill}/SKILL.md`);
   }
+  const orchestrator = await readText(join(target, ".agents", "skills", "motion-orchestrator", "SKILL.md"));
+  add("Layerability Gate", orchestrator.includes("## Layerability Gate"), ".agents/skills/motion-orchestrator/SKILL.md");
+  const motionQa = await readText(join(target, ".agents", "skills", "motion-qa", "SKILL.md"));
+  add("Layer Separation Critic", motionQa.includes("## Layer Separation Critic"), ".agents/skills/motion-qa/SKILL.md");
   const agents = await readText(join(target, "AGENTS.md"));
   add("AGENTS.md integration", agents.includes(MANAGED_START) && agents.includes(MANAGED_END), "managed @motion instructions");
   if (flags.deep && checks.every((item) => item.ok)) {
