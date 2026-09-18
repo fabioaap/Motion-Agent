@@ -63,6 +63,32 @@ for (const token of [
   if (!squad.includes(token)) throw new Error(`squad.yaml missing: ${token}`);
 }
 
+const taskRequiredFields = ["task:", "responsavel_type:", "atomic_layer:", "**Entrada:**", "**Checklist:**"];
+const taskFiles = [
+  "intake-motion-request.md",
+  "audit-scene-topology.md",
+  "request-missing-assets.md",
+  "resolve-motion-strategy.md",
+  "resolve-template.md",
+  "build-motion-scene.md",
+  "review-motion-scene.md",
+  "render-final-motion.md"
+];
+for (const taskFile of taskFiles) {
+  const taskContent = await readFile(join(root, "tasks", taskFile), "utf8");
+  for (const token of taskRequiredFields) {
+    if (!taskContent.includes(token)) {
+      throw new Error(`${taskFile} missing TASK-FORMAT-SPEC-V1 field: ${token}`);
+    }
+  }
+  if (!/respons[aá]vel:\s*.+/i.test(taskContent)) {
+    throw new Error(`${taskFile} missing responsável/responsavel field`);
+  }
+  if (!/\*\*Sa[ií]da:\*\*/i.test(taskContent)) {
+    throw new Error(`${taskFile} missing Saída/Saida field`);
+  }
+}
+
 const topology = await readFile(join(root, "tasks", "audit-scene-topology.md"), "utf8");
 for (const token of [
   "BLOCKED_MISSING_ASSETS",
@@ -84,6 +110,16 @@ if (!build.includes("HARD FAIL") || !build.includes("independent")) {
 }
 
 const workflow = await readFile(join(root, "workflows", "create-motion.yaml"), "utf8");
+for (const token of ["workflow:", "id: create-motion", "name:", "description:", "type:", "sequence:", "handoff_prompts:"]) {
+  if (!workflow.includes(token)) throw new Error(`create-motion workflow missing: ${token}`);
+}
+const stepBlocks = workflow.split(/\n\s*- step:/).slice(1);
+for (const block of stepBlocks) {
+  if (!block.includes("agent:")) throw new Error("Workflow step missing agent");
+  if (!block.includes("action:") && !block.includes("validates:")) {
+    throw new Error("Workflow step missing action/validates");
+  }
+}
 const missingIndex = workflow.indexOf("step: missing-assets");
 const buildIndex = workflow.indexOf("step: build");
 if (missingIndex < 0 || buildIndex < 0 || missingIndex > buildIndex) {
@@ -98,4 +134,9 @@ if (!policy.userApprovalRequiredFor?.includes("FLAT_MOTION_ONLY")) {
   throw new Error("Flat motion must require explicit user approval");
 }
 
-console.log("Motion Squad structural validation passed");
+const manifestText = await readFile(join(root, "squad.yaml"), "utf8");
+for (const token of ["name: motion-squad", "version: 1.0.0", "slashPrefix: motion", 'minVersion: "2.1.0"', "type: squad"]) {
+  if (!manifestText.includes(token)) throw new Error(`Manifest schema requirement missing: ${token}`);
+}
+
+console.log("Motion Squad structural validation passed (AIOX task-first + layerability gates)");
