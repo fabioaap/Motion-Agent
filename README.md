@@ -137,7 +137,7 @@ pnpm dlx "github:fabioaap/Motion-Agent#feat/adsmagic-do-clique-a-venda-motion" u
 pnpm dlx "github:fabioaap/Motion-Agent#feat/adsmagic-do-clique-a-venda-motion" doctor --deep
 ```
 
-The doctor output must report `pipeline version: layered-motion-templates-v1`, `Layerability Gate`, `Template Resolution`, `Three template recipe` and `Layer Separation Critic`.
+The doctor output must report `pipeline version: aiox-motion-squad-v1`, `Layerability Gate`, `Template Resolution`, `Three template recipe` and `Layer Separation Critic`.
 
 ### Doctor
 
