@@ -1,4 +1,5 @@
 import React from "react";
+import {SpatialPlate} from "./SpatialPlate";
 import {
   AbsoluteFill,
   Easing,
@@ -393,37 +394,9 @@ const DashboardMotion: React.FC<{f: number}> = ({f}) => {
   );
 };
 
-const CinematicPlate: React.FC<{source: string; f: number; duration?: number; dim?: number; blur?: number}> = ({
-  source,
-  f,
-  duration = 60,
-  dim = 0.62,
-  blur = 2.2
-}) => {
-  const drift = interpolate(f, [0, duration], [-0.7, 0.7], clamp);
-  const zoom = interpolate(f, [0, duration], [1.035, 1.075], clamp);
-  return (
-    <AbsoluteFill style={{overflow: "hidden"}}>
-      <Img
-        src={staticFile(source)}
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          filter: `brightness(${dim}) saturate(.92) blur(${blur}px)`,
-          transform: `translate3d(${drift}%,0,0) scale(${zoom})`,
-          transformOrigin: "50% 50%"
-        }}
-      />
-      <AbsoluteFill
-        style={{
-          background:
-            "linear-gradient(90deg,rgba(1,5,67,.72) 0%,rgba(1,5,67,.28) 42%,rgba(1,5,67,.18) 100%),linear-gradient(180deg,rgba(1,5,67,.10),rgba(1,5,67,.34))"
-        }}
-      />
-    </AbsoluteFill>
-  );
-};
+const CinematicPlate: React.FC<{source: string; f: number; duration?: number; dim?: number; blur?: number}> = (props) => (
+  <SpatialPlate {...props} />
+);
 
 const GridBackdrop: React.FC = () => {
   const frame = useCurrentFrame();
