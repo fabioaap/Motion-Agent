@@ -1,0 +1,68 @@
+name: motion-squad
+version: 1.0.0
+description: Asset-first motion design squad for layered Remotion production with hard gates against flattened slide-like animation.
+author: Fabio
+license: MIT
+slashPrefix: motion
+
+aiox:
+  minVersion: "2.1.0"
+  type: squad
+
+components:
+  agents:
+    - motion-director.md
+    - asset-intake-specialist.md
+    - layerability-guard.md
+    - template-resolver.md
+    - remotion-builder.md
+    - fidelity-critic.md
+    - motion-qa.md
+  tasks:
+    - intake-motion-request.md
+    - audit-scene-topology.md
+    - request-missing-assets.md
+    - resolve-motion-strategy.md
+    - resolve-template.md
+    - build-motion-scene.md
+    - review-motion-scene.md
+    - render-final-motion.md
+  workflows:
+    - create-motion.yaml
+    - rebuild-after-assets.yaml
+  checklists:
+    - layer-readiness-checklist.md
+    - missing-assets-gate.md
+    - fidelity-checklist.md
+    - ready-for-human-checklist.md
+  templates:
+    - asset-request-response.md
+    - motion-plan-response.md
+    - blocked-response.md
+  tools:
+    - asset-manifest-reader.js
+    - remotion-runtime.js
+  scripts:
+    - prepare-scene.js
+    - render-scene.js
+
+config:
+  extends: extend
+  coding-standards: config/coding-standards.md
+  tech-stack: config/tech-stack.md
+  source-tree: config/source-tree.md
+
+dependencies:
+  node:
+    - remotion
+    - react
+    - react-dom
+  python: []
+  squads: []
+
+tags:
+  - motion
+  - remotion
+  - layered-animation
+  - asset-first
+  - design-system
