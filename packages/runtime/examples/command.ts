@@ -21,6 +21,7 @@ const registry = new AgentRegistry();
 for (const name of [
   "director",
   "asset_inspector",
+  "decomposition_agent",
   "creative_reference_agent",
   "motion_director",
   "motion_spec_agent",
@@ -53,6 +54,47 @@ for (const name of [
     })
   );
 }
+
+registry.register(
+  passthrough("asset_inspector", (context) => {
+    const asset = context.assets?.assets[0];
+    if (!asset) return context;
+    context.decomposition = {
+      job_id: context.job_id,
+      scene_id: context.scene_id,
+      layerability_status: "LAYERED_READY",
+      layer_map_verified: true,
+      full_scene_flattened_foreground: false,
+      layer_map: [
+        {
+          element_id: "dashboard_ui",
+          role: "animated_foreground",
+          source_kind: asset.type.toUpperCase() === "SVG" ? "SVG" : "SOURCE_COMPONENT",
+          independently_addressable: true
+        }
+      ],
+      elements: [
+        {
+          element_id: "dashboard_ui",
+          name: asset.name,
+          source_asset_id: asset.asset_id,
+          strategy: asset.type.toUpperCase() === "SVG" ? "REUSE_SVG" : "USE_ORIGINAL",
+          requires_animation: true,
+          requires_original_source: false,
+          reconstruction_allowed: false,
+          fidelity_requirement: "STRICT",
+          validation_required: true,
+          scope_status: "OPEN"
+        }
+      ]
+    };
+    return context;
+  })
+);
+
+registry.register(
+  passthrough("decomposition_agent", (context) => context)
+);
 
 const orchestrator = new MotionOrchestrator(registry, {
   requireHumanApproval: true
