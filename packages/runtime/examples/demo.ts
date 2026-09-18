@@ -136,6 +136,23 @@ const initial = JobContextSchema.parse({
   decomposition: {
     job_id: "motion_demo_001",
     scene_id: "scene_01",
+    layerability_status: "LAYERED_READY",
+    layer_map_verified: true,
+    full_scene_flattened_foreground: false,
+    layer_map: [
+      {
+        element_id: "dashboard_base",
+        role: "background",
+        source_kind: "BACKGROUND_PLATE",
+        independently_addressable: true
+      },
+      {
+        element_id: "notification_icon",
+        role: "animated_foreground",
+        source_kind: "SVG",
+        independently_addressable: true
+      }
+    ],
     elements: [
       {
         element_id: "dashboard_base",
