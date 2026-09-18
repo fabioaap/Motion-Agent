@@ -1,48 +1,73 @@
+#### Step 5: Resolve Remotion Template
+
 task: resolveTemplate()
-responsible: template-resolver
-responsible_type: Agent
-atomic_layer: Architecture
-elicit: false
+responsável: Template Resolver
+responsavel_type: Agente
+atomic_layer: Strategy
 
-inputs:
-- field: motion_strategy
-  type: object
-  source: Workflow Context
-  required: true
-- field: technique_required
-  type: array
-  source: Workflow Context
-  required: true
-- field: template_registry
-  type: object
-  source: .motion/template-recipes.json
-  required: true
+**Entrada:**
+- campo: motionStrategy
+  tipo: object
+  origem: Step 4 (resolveMotionStrategy)
+  obrigatório: true
+- campo: techniqueRequired
+  tipo: array<string>
+  origem: Step 4 (resolveMotionStrategy)
+  obrigatório: true
+- campo: templateRegistry
+  tipo: object
+  origem: config (.motion/template-recipes.json)
+  obrigatório: true
 
-outputs:
-- field: selected_template
-  type: object
-  destination: Workflow Context
-  persisted: true
+**Saída:**
+- campo: selectedTemplate
+  tipo: object
+  destino: Step 6 (buildMotionScene)
+  persistido: true
 
-# Procedure
+**Checklist:**
+  pre-conditions:
+    - [ ] Motion strategy is defined before template selection
+      tipo: pre-condition
+      blocker: true
+      validação: "motionStrategy != null"
+  post-conditions:
+    - [ ] A single primary technical baseline is selected
+      tipo: post-condition
+      blocker: true
+      validação: "selectedTemplate.templateId != null"
+    - [ ] Three is selected only for genuine 3D requirements
+      tipo: post-condition
+      blocker: true
+      validação: "selectedTemplate.templateId != 'three' || techniqueRequired.some(x => /3d|r3f|three/i.test(x))"
+    - [ ] Template selection does not alter Layerability requirements
+      tipo: post-condition
+      blocker: true
+      validação: "selectedTemplate.layerabilityGateUnchanged == true"
+  acceptance-criteria:
+    - [ ] Template acts as a technical reference rather than a visual style source
+      tipo: acceptance
+      blocker: false
+      story: MOTION-SQUAD-001
+      manual_check: true
 
-1. Read `.motion/template-recipes.json`.
-2. Default to `blank`.
-3. Select `three` only for true React Three Fiber / geometry / camera requirements.
-4. Select `skia` only when the scene materially benefits from Skia-specific rendering.
-5. Select other specialized templates only for their explicit technical role.
-6. Never select a template to compensate for missing assets.
-7. Record:
-   - template id;
-   - official page;
-   - create command;
-   - reason;
-   - adaptation plan;
-   - dependencies introduced.
-8. Preserve host project architecture and approved art direction.
+**Template:**
+- path: data/remotion-templates.json
+  type: input
+  version: 1.0.0
+  variables: [techniqueRequired]
 
-# Exit Criteria
+**Error Handling:**
+- strategy: fallback
+- fallback: "Use blank as the technical baseline."
+- abort_workflow: false
+- notification: log
 
-- One primary technical baseline is selected.
-- Selection is justified by motion strategy.
-- Layerability rules remain unchanged.
+**Metadata:**
+- story: MOTION-SQUAD-001
+- version: 1.0.0
+- dependencies: [Step 4]
+- breaking_changes: []
+- author: Motion Agent
+- created_at: 2026-09-18
+- updated_at: 2026-09-18
