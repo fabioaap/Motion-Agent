@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "lastReviewed": "2026-09-18",
+  "catalog": "https://www.remotion.dev/templates",
+  "policy": {
+    "defaultRecipe": "default-motion-agent",
+    "preserveHostProjectSource": true,
+    "vendorTemplateSourceByDefault": false,
+    "paidTemplatesRequireUserLicense": true
+  },
+  "recipes": [
+    {
+      "id": "default-motion-agent",
+      "type": "native",
+      "useFor": [
+        "product UI motion",
+        "brand motion",
+        "component motion",
+        "asset-preserving animation"
+      ],
+      "action": "use Motion Agent native workflow"
+    },
+    {
+      "id": "prompt-to-motion-graphics",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates/prompt-to-motion-graphics",
+      "scaffold": "pnpm create video --prompt-to-motion-graphics",
+      "useFor": [
+        "prompt-driven motion graphics",
+        "dynamic skill routing",
+        "self-correcting generated Remotion code"
+      ],
+      "reuse": [
+        "request validation",
+        "skill detection",
+        "guidance vs example skills",
+        "sanitization",
+        "compile-error self-correction"
+      ],
+      "avoid": [
+        "SaaS-specific API/JIT architecture in Codex mode"
+      ]
+    },
+    {
+      "id": "prompt-to-video",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates/prompt-to-video",
+      "scaffold": "pnpm create video --prompt-to-video",
+      "useFor": [
+        "scripted short video",
+        "images plus voiceover",
+        "prompt-to-story video"
+      ],
+      "externalProviders": [
+        "content/image/voice providers may be required"
+      ]
+    },
+    {
+      "id": "three",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates/three",
+      "scaffold": "pnpm create video --three",
+      "useFor": [
+        "3D scenes",
+        "React Three Fiber",
+        "camera/mesh/light animation"
+      ]
+    },
+    {
+      "id": "audiogram",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates/audiogram",
+      "scaffold": "pnpm create video --audiogram",
+      "useFor": [
+        "podcast clips",
+        "waveform social content",
+        "speaker snippets"
+      ]
+    },
+    {
+      "id": "music-visualization",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "music-driven visuals",
+        "waveforms",
+        "track visualizers"
+      ]
+    },
+    {
+      "id": "overlay",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates/overlay",
+      "scaffold": "pnpm create video --overlay",
+      "useFor": [
+        "transparent overlays",
+        "assets for traditional editors",
+        "FFmpeg/Premiere/Resolve compositing"
+      ]
+    },
+    {
+      "id": "code-hike",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates/code-hike",
+      "scaffold": "pnpm create video --code-hike",
+      "useFor": [
+        "developer tutorials",
+        "animated code states",
+        "code explainers"
+      ]
+    },
+    {
+      "id": "tiktok",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates/tiktok",
+      "scaffold": "pnpm create video --tiktok",
+      "useFor": [
+        "word-by-word captions",
+        "shorts/reels captions",
+        "local Whisper.cpp transcription"
+      ]
+    },
+    {
+      "id": "stills",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "dynamic PNG/JPEG",
+        "thumbnail generation",
+        "non-video visual output"
+      ]
+    },
+    {
+      "id": "render-server",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates/render-server",
+      "scaffold": "pnpm create video --render-server",
+      "useFor": [
+        "server-side rendering",
+        "render job tracking",
+        "render cancellation"
+      ]
+    },
+    {
+      "id": "nextjs-video-app",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "video-generation SaaS",
+        "web video generation apps"
+      ]
+    },
+    {
+      "id": "nextjs-vercel-sandbox",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "on-demand renders in Vercel Sandbox"
+      ]
+    },
+    {
+      "id": "react-router-video-app",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "React Router video-generation apps"
+      ]
+    },
+    {
+      "id": "recorder",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "browser recording tools",
+        "JavaScript video production tools"
+      ]
+    },
+    {
+      "id": "electron",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "desktop video rendering apps",
+        "Electron render workflows"
+      ]
+    },
+    {
+      "id": "skia",
+      "type": "official-reference",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "React Native Skia visuals"
+      ]
+    },
+    {
+      "id": "stargazer",
+      "type": "inspiration-only",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "repository star celebration videos"
+      ]
+    },
+    {
+      "id": "blank",
+      "type": "bootstrap-only",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "learning",
+        "empty starter"
+      ]
+    },
+    {
+      "id": "hello-world",
+      "type": "bootstrap-only",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "learning",
+        "basic animation playground"
+      ]
+    },
+    {
+      "id": "javascript",
+      "type": "bootstrap-only",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "plain JavaScript starter"
+      ]
+    },
+    {
+      "id": "editor-starter",
+      "type": "paid-reference",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "building video editors"
+      ],
+      "requiresUserLicense": true
+    },
+    {
+      "id": "timeline",
+      "type": "paid-reference",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "timeline-based editing UI"
+      ],
+      "requiresUserLicense": true
+    },
+    {
+      "id": "watercolor-map",
+      "type": "paid-reference",
+      "url": "https://www.remotion.dev/templates",
+      "useFor": [
+        "travel/map video visuals"
+      ],
+      "requiresUserLicense": true
+    }
+  ]
+}
