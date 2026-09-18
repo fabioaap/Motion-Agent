@@ -1,0 +1,63 @@
+workflow:
+  id: create-motion
+  name: Asset-first layered motion production
+  entry_task: intake-motion-request.md
+
+  sequence:
+    - step: intake
+      task: intake-motion-request.md
+      agent: motion-director
+
+    - step: topology
+      task: audit-scene-topology.md
+      agent: asset-intake-specialist
+
+    - step: missing-assets
+      task: request-missing-assets.md
+      agent: asset-intake-specialist
+      condition: layerability_status == BLOCKED_MISSING_ASSETS
+      stop_on_success: true
+      terminal_status: WAITING_FOR_ASSETS
+
+    - step: flat-authorization
+      task: request-missing-assets.md
+      agent: layerability-guard
+      condition: layerability_status == FLAT_MOTION_ONLY AND explicit_flat_motion_authorization != true
+      stop_on_success: true
+      terminal_status: WAITING_FOR_USER_DECISION
+
+    - step: strategy
+      task: resolve-motion-strategy.md
+      agent: motion-director
+      condition: layerability_status != BLOCKED_MISSING_ASSETS
+
+    - step: template
+      task: resolve-template.md
+      agent: template-resolver
+
+    - step: build
+      task: build-motion-scene.md
+      agent: remotion-builder
+      condition: build_mode == LAYERED_MOTION OR build_mode == FLAT_MOTION_ALLOWED
+
+    - step: reconstruction
+      task: build-motion-scene.md
+      agent: remotion-builder
+      condition: build_mode == RECONSTRUCTION_FIRST
+
+    - step: fidelity-review
+      task: review-motion-scene.md
+      agent: fidelity-critic
+
+    - step: motion-review
+      task: review-motion-scene.md
+      agent: motion-qa
+
+    - step: human-gate
+      checklist: ready-for-human-checklist.md
+      terminal_status: READY_FOR_HUMAN
+
+    - step: final-render
+      task: render-final-motion.md
+      agent: remotion-builder
+      condition: human_approval == true
