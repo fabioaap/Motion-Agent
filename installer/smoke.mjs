@@ -59,7 +59,7 @@ try {
   }
 
   const manifest = JSON.parse(await readFile(join(target, ".motion", "install-manifest.json"), "utf8"));
-  if (manifest.pipelineVersion !== "layered-motion-templates-v1") {
+  if (manifest.pipelineVersion !== "aiox-motion-squad-v1") {
     throw new Error(`Unexpected pipeline version ${manifest.pipelineVersion ?? "missing"}`);
   }
 
