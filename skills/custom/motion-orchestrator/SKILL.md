@@ -25,9 +25,9 @@ Do not confuse motion applied to a flattened image with motion of independent sc
 5. Run Scene Topology Audit.
 6. Choose an Asset Decomposition Strategy.
 7. Run the Layerability Gate.
-8. Run Template Resolution against `.motion/template-recipes.json`.
-9. Select the smallest official Remotion template or technique reference that fits the implementation problem.
-10. Define Motion Direction.
+8. Define Motion Direction and identify the implementation technique.
+9. Run Template Resolution against `.motion/template-recipes.json`.
+10. Select the smallest official Remotion template or technique reference that fits the approved motion direction.
 11. Produce Motion Spec with an explicit Layer Map and template selection record.
 12. Route to the minimum set of specialist agents.
 13. Build preview.
@@ -67,7 +67,7 @@ If the gate fails, return to decomposition before motion implementation.
 
 ## Template Resolution
 
-After Layerability passes and before implementation, read `.motion/template-recipes.json` and select the smallest relevant official Remotion template or technique reference.
+After Layerability passes and Motion Direction has identified the required technique, read `.motion/template-recipes.json` and select the smallest relevant official Remotion template or technique reference before Motion Spec and implementation.
 
 Default to `blank` for custom product motion when no specialized runtime is required.
 
