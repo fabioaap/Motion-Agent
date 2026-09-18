@@ -7,12 +7,12 @@ import {fileURLToPath} from "node:url";
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packageJson = JSON.parse(await readFile(join(PACKAGE_ROOT, "package.json"), "utf8"));
 const VERSION = packageJson.version ?? "0.0.0";
-const PIPELINE_VERSION = "layered-motion-v1";
+const PIPELINE_VERSION = "layered-motion-templates-v1";
 const MANAGED_START = "<!-- motion-agent:start -->";
 const MANAGED_END = "<!-- motion-agent:end -->";
 const GITIGNORE_START = "# motion-agent:start";
 const GITIGNORE_END = "# motion-agent:end";
-const CUSTOM_SKILLS = ["motion-orchestrator", "asset-fidelity", "scene-director", "motion-qa"];
+const CUSTOM_SKILLS = ["motion-orchestrator", "template-resolver", "asset-fidelity", "scene-director", "motion-qa"];
 
 function usage() {
   console.log(`Motion Agent ${VERSION}\n\nUsage:\n  motion-agent init [--target <dir>] [--skip-install] [--skip-remotion-skills] [--force]\n  motion-agent update [--target <dir>] [--skip-install] [--skip-remotion-skills]\n  motion-agent doctor [--target <dir>] [--deep] [--json]\n  motion-agent uninstall [--target <dir>]\n  motion-agent version\n\nRecommended from another repository:\n  pnpm dlx github:fabioaap/Motion-Agent init\n`);
@@ -137,7 +137,12 @@ async function writeManifest(target) {
       ".motion",
       ...CUSTOM_SKILLS.map((name) => `.agents/skills/${name}`)
     ],
-    officialRemotionSkills: "remotion-dev/skills"
+    officialRemotionSkills: "remotion-dev/skills",
+    officialRemotionTemplates: {
+      catalog: "https://www.remotion.dev/templates",
+      registry: ".motion/template-recipes.json",
+      reviewedAt: "2026-09-18"
+    }
   };
   await writeFile(join(target, ".motion", "install-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 }
@@ -147,7 +152,7 @@ async function configureProject(target) {
     join(target, "AGENTS.md"),
     MANAGED_START,
     MANAGED_END,
-    `## Motion Agent\n\nWhen a request starts with \`@motion\` or explicitly asks for Motion Agent, read \`.agents/skills/motion-orchestrator/SKILL.md\` first. Work in this repository's real product context and reuse its exact components, SVGs, fonts, design tokens and assets before reconstructing anything. Run Scene Topology Audit and the Layerability Gate before implementation whenever component-level motion is expected. A flattened full-scene styleframe may be a visual reference, but camera movement, parallax, zoom, blur or Three.js displacement applied to it do not count as independent component motion. Use \`.motion/remotion\` as the isolated preview/render workspace. Run fidelity, layer separation, motion, composition and regression QA before presenting a preview. Do not require an OpenAI API key in Codex mode. Keep the human approval gate before final delivery.`
+    `## Motion Agent\n\nWhen a request starts with \`@motion\` or explicitly asks for Motion Agent, read \`.agents/skills/motion-orchestrator/SKILL.md\` first. Work in this repository's real product context and reuse its exact components, SVGs, fonts, design tokens and assets before reconstructing anything. Run Scene Topology Audit and the Layerability Gate before implementation whenever component-level motion is expected. After Layerability passes, read \`.agents/skills/template-resolver/SKILL.md\` and \`.motion/template-recipes.json\`, then select the smallest relevant official Remotion template or technique reference before building. A flattened full-scene styleframe may be a visual reference, but camera movement, parallax, zoom, blur or Three.js displacement applied to it do not count as independent component motion. The Three template does not bypass Layerability. Use \`.motion/remotion\` as the isolated preview/render workspace and do not overwrite the host app with a template. Run fidelity, layer separation, motion, composition and regression QA before presenting a preview. Do not require an OpenAI API key in Codex mode. Keep the human approval gate before final delivery.`
   );
   await upsertManagedBlock(
     join(target, ".gitignore"),
@@ -206,6 +211,15 @@ async function doctor(target, flags) {
   }
   const orchestrator = await readText(join(target, ".agents", "skills", "motion-orchestrator", "SKILL.md"));
   add("Layerability Gate", orchestrator.includes("## Layerability Gate"), ".agents/skills/motion-orchestrator/SKILL.md");
+  add("Template Resolution", orchestrator.includes("## Template Resolution"), ".agents/skills/motion-orchestrator/SKILL.md");
+  const templateResolver = await readText(join(target, ".agents", "skills", "template-resolver", "SKILL.md"));
+  add("Template Resolver skill", templateResolver.includes("# Template Resolver"), ".agents/skills/template-resolver/SKILL.md");
+  const templateRegistryPath = join(target, ".motion", "template-recipes.json");
+  add("Remotion template registry", await exists(templateRegistryPath), ".motion/template-recipes.json");
+  const templateRegistry = JSON.parse(await readText(templateRegistryPath, "{}"));
+  const templateIds = Array.isArray(templateRegistry.templates) ? templateRegistry.templates.map((item) => item?.id).filter(Boolean) : [];
+  add("Three template recipe", templateIds.includes("three"), "official Remotion React Three Fiber template");
+  add("Blank template recipe", templateIds.includes("blank"), "default Motion Agent baseline");
   const motionQa = await readText(join(target, ".agents", "skills", "motion-qa", "SKILL.md"));
   add("Layer Separation Critic", motionQa.includes("## Layer Separation Critic"), ".agents/skills/motion-qa/SKILL.md");
   const agents = await readText(join(target, "AGENTS.md"));
