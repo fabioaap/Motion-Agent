@@ -1,0 +1,15 @@
+{
+  "source": "https://www.remotion.dev/templates",
+  "registry": ".motion/template-recipes.json",
+  "default": "blank",
+  "important": {
+    "blank": "Default for custom layered product motion.",
+    "three": "True React Three Fiber / 3D only; never a layerability workaround.",
+    "skia": "Skia-specific canvas/vector rendering.",
+    "overlay": "Transparent overlay output.",
+    "code-hike": "Animated code.",
+    "audiogram": "Speech/podcast waveform.",
+    "music-visualization": "Music-driven visuals.",
+    "tiktok": "Word-by-word captions."
+  }
+}
