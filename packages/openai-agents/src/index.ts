@@ -176,6 +176,7 @@ class MotionAgentHandler implements AgentHandler {
       case "director": return this.direct(context);
       case "asset_inspector": return this.inspectAssets(context);
       case "decomposition_agent": return this.inspectAssets(context);
+      case "template_resolver": return {context};
       case "source_asset_agent": return this.resolveSources(context);
       case "creative_reference_agent": return this.creativeDirections(context);
       case "motion_director": return this.motionDirection(context);
@@ -461,6 +462,7 @@ export function createOpenAIAgentRegistry(options: OpenAIAgentRegistryOptions = 
     "asset_inspector",
     "source_asset_agent",
     "decomposition_agent",
+    "template_resolver",
     "creative_reference_agent",
     "motion_director",
     "motion_spec_agent",
