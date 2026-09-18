@@ -203,17 +203,24 @@ pnpm motion:render
 
 They operate only on the isolated `.motion/remotion` workspace.
 
-## Fidelity rules
+## Fidelity and layerability rules
 
 The installed workflow prefers, in order:
 
-1. exact original assets;
-2. original SVGs or source components;
-3. existing design-system components and tokens;
-4. hybrid composition;
-5. validated reconstruction only when necessary.
+1. exact source components;
+2. original SVGs;
+3. original transparent assets;
+4. user-provided cutouts or verified segmentation;
+5. existing design-system components and tokens;
+6. faithful React/SVG reconstruction for simple elements;
+7. raster environmental background plates when the background is not the animated subject;
+8. validated reconstruction only when necessary.
 
 Approximate replacement of strict logos, icons, typefaces, components or UI assets is not allowed.
+
+When component-level motion is required, a flattened full-scene styleframe is reference material only. Camera drift, parallax, zoom, blur or Three.js displacement applied to that flattened frame do not count as independent component motion.
+
+The pipeline must pass a **Layerability Gate** before implementation and a **Layer Separation Critic** before delivery.
 
 ## Motion workflow
 
@@ -222,15 +229,17 @@ Approximate replacement of strict logos, icons, typefaces, components or UI asse
   -> inspect repository context
   -> intake
   -> asset audit
-  -> source resolution
+  -> scene topology audit
+  -> source resolution when needed
+  -> layerability gate
   -> creative direction when needed
   -> motion direction
-  -> motion spec
+  -> motion spec + layer map
   -> specialist routing
   -> Remotion build
   -> preview render
   -> multi-frame visual QA
-  -> fidelity / motion / composition / brand / technical review
+  -> fidelity / layer separation / motion / composition / brand / technical review
   -> regression guard
   -> correction loop
   -> READY_FOR_HUMAN
