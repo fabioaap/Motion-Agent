@@ -31,7 +31,9 @@ try {
     ".motion/config.json",
     ".motion/install-manifest.json",
     ".motion/remotion/package.json",
+    ".motion/template-recipes.json",
     ".agents/skills/motion-orchestrator/SKILL.md",
+    ".agents/skills/template-router/SKILL.md",
     ".agents/skills/asset-fidelity/SKILL.md",
     ".agents/skills/scene-director/SKILL.md",
     ".agents/skills/motion-qa/SKILL.md"
