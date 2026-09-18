@@ -718,6 +718,22 @@ const Scene6: React.FC<{f: number}> = ({f}) => (
 const Scene7: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
     <CinematicPlate source="adsmagic-do-clique-a-venda/overview.webp" f={f} duration={90} dim={0.78} blur={0.75} />
+    <div
+      style={{
+        position: "absolute",
+        left: 1430,
+        top: 586,
+        width: 430,
+        height: 132,
+        borderRadius: 18,
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
+        background: "rgba(1,5,67,.10)",
+        WebkitMaskImage: "linear-gradient(90deg,transparent 0%,#000 10%,#000 92%,transparent 100%)",
+        maskImage: "linear-gradient(90deg,transparent 0%,#000 10%,#000 92%,transparent 100%)",
+        zIndex: 7
+      }}
+    />
     <DashboardMotion f={f} />
     <JourneyHighlight progress={p(f, 5, 82, soft)} opacity={0.72} />
   </AbsoluteFill>
