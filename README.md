@@ -128,6 +128,15 @@ Re-apply the current Motion Agent managed files and skills while preserving the 
 pnpm dlx github:fabioaap/Motion-Agent update
 ```
 
+To test the layered-motion pipeline from the development branch before merge:
+
+```bash
+pnpm dlx "github:fabioaap/Motion-Agent#feat/adsmagic-do-clique-a-venda-motion" update
+pnpm dlx "github:fabioaap/Motion-Agent#feat/adsmagic-do-clique-a-venda-motion" doctor --deep
+```
+
+The doctor output must report `pipeline version: layered-motion-v1`, `Layerability Gate` and `Layer Separation Critic`.
+
 ### Doctor
 
 Check Node, pnpm, manifest, Remotion workspace, custom skills and `AGENTS.md` integration:
