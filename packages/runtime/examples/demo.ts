@@ -24,6 +24,7 @@ for (const name of [
   "asset_inspector",
   "source_asset_agent",
   "decomposition_agent",
+  "template_resolver",
   "creative_reference_agent",
   "motion_director",
   "motion_spec_agent",
@@ -201,6 +202,7 @@ const result = await orchestrator.run(initial);
 
 console.log(JSON.stringify({
   state: result.state,
+  template: result.template_selection,
   qaCritics: result.qa_reports.map((report) => report.critic),
   openIssues: result.open_issues.length
 }, null, 2));
