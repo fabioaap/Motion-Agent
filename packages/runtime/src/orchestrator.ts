@@ -70,16 +70,6 @@ export class MotionOrchestrator {
       return this.setState(context, machine, "HUMAN_INPUT_REQUIRED");
     }
 
-    context = this.setState(context, machine, "TEMPLATE_RESOLUTION");
-    context.template_selection = TemplateSelectionSchema.parse(
-      resolveOfficialRemotionTemplate(context)
-    );
-    if (this.agents.has("template_resolver")) {
-      context = JobContextSchema.parse(
-        (await this.agents.get("template_resolver").run(context)).context
-      );
-    }
-
     if (context.brief.user_direction_level === "LOW") {
       context = await this.advance(
         context,
@@ -90,6 +80,17 @@ export class MotionOrchestrator {
     }
 
     context = await this.advance(context, machine, "DIRECTION_READY", "motion_director");
+
+    context = this.setState(context, machine, "TEMPLATE_RESOLUTION");
+    context.template_selection = TemplateSelectionSchema.parse(
+      resolveOfficialRemotionTemplate(context)
+    );
+    if (this.agents.has("template_resolver")) {
+      context = JobContextSchema.parse(
+        (await this.agents.get("template_resolver").run(context)).context
+      );
+    }
+
     context = await this.advance(context, machine, "MOTION_SPEC_READY", "motion_spec_agent");
 
     while (true) {
