@@ -32,11 +32,15 @@ jobs:
           base64 -d apps/remotion-studio/public/adsmagic-do-clique-a-venda/chunks/context.b64 > apps/remotion-studio/public/adsmagic-do-clique-a-venda/context.webp
           test $(stat -c%s apps/remotion-studio/public/adsmagic-do-clique-a-venda/hook.webp) -gt 12000
           test $(stat -c%s apps/remotion-studio/public/adsmagic-do-clique-a-venda/context.webp) -gt 10000
+      - name: Reconstruct Scene 1 layered assets
+        run: pnpm --filter @motion-agent/remotion-studio assets:scene1
       - run: pnpm --filter @motion-agent/remotion-studio compositions
       - run: pnpm render:demo
       - run: pnpm render:job
       - run: pnpm render:scene
       - run: pnpm --filter @motion-agent/remotion-studio render:adsmagic
+      - run: pnpm --filter @motion-agent/remotion-studio render:scene1
+      - run: pnpm --filter @motion-agent/remotion-studio still:scene1
       - run: pnpm --filter @motion-agent/remotion-studio exec remotion still src/index.ts MotionScene out/motion-scene-still.png --frame=0 --props=jobs/scene-job.json
       - run: pnpm --filter @motion-agent/remotion-studio exec remotion still src/index.ts AdsmagicClickToSale out/adsmagic-do-clique-a-venda-still.png --frame=0
       - name: Render Adsmagic QA checkpoints
@@ -66,6 +70,8 @@ jobs:
             apps/remotion-studio/out/motion-scene-still.png
             apps/remotion-studio/out/adsmagic-do-clique-a-venda.mp4
             apps/remotion-studio/out/adsmagic-do-clique-a-venda-still.png
+            apps/remotion-studio/out/adsmagic-scene1-layered.mp4
+            apps/remotion-studio/out/adsmagic-scene1-layered-still.png
             apps/remotion-studio/out/adsmagic-qa/*.png
             apps/remotion-studio/out/qa/qa_preview_smoke/**/*
           if-no-files-found: error
