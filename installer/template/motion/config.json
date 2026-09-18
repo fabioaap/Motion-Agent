@@ -14,5 +14,11 @@
     "visualDiff": true,
     "motionKeyframes": 7,
     "regressionGuard": true
+  },
+  "templateRouter": {
+    "enabled": true,
+    "registry": ".motion/template-recipes.json",
+    "defaultRecipe": "default-motion-agent",
+    "preferReferenceOverVendoring": true
   }
 }
