@@ -1,7 +1,7 @@
 ---
 name: motion-orchestrator
-description: Routes @motion requests through intake, asset analysis, dynamic specialist graph, QA loops and human approval
-version: 1.0.0
+description: Routes @motion requests through intake, asset analysis, layerability gates, specialist graph, QA loops and human approval
+version: 1.1.0
 ---
 
 # Motion Orchestrator
@@ -14,21 +14,69 @@ Turn user intent and visual materials into a directed motion result through a mu
 
 Do not jump directly from prompt to Remotion code.
 
+Do not confuse motion applied to a flattened image with motion of independent scene components.
+
 ## Flow
 
 1. Parse the request through the Motion Command Gateway.
 2. Determine whether the user already supplied objective, desired behavior, references and assets.
 3. Ask only for missing information that materially changes the creative or technical direction.
 4. Run Asset Audit.
-5. Choose an Asset Decomposition Strategy.
-6. Define Motion Direction.
-7. Produce Motion Spec.
-8. Route to the minimum set of specialist agents.
-9. Build preview.
-10. Run independent QA critics.
-11. Route each failed issue back to the responsible specialist.
-12. Repeat until convergence or a real human input requirement is reached.
-13. Present only a validated preview for human review.
+5. Run Scene Topology Audit.
+6. Choose an Asset Decomposition Strategy.
+7. Run the Layerability Gate.
+8. Define Motion Direction.
+9. Produce Motion Spec with an explicit Layer Map.
+10. Route to the minimum set of specialist agents.
+11. Build preview.
+12. Run independent QA critics, including Layer Separation Critic when component motion is required.
+13. Route each failed issue back to the responsible specialist.
+14. Repeat until convergence or a real human input requirement is reached.
+15. Present only a validated preview for human review.
+
+## Scene Topology Audit
+
+Before implementation, classify every scene using one of these states:
+
+- `LAYERED_READY`: major foreground objects already exist as independent source components, SVGs, transparent assets or equivalent addressable elements.
+- `DECOMPOSITION_REQUIRED`: the scene is visually approved but major foreground objects are flattened into a styleframe and must be separated or reconstructed.
+- `BLOCKED_MISSING_SOURCE`: faithful separation cannot be achieved from the available source material.
+
+Record the classification in the Motion Spec.
+
+## Layerability Gate
+
+If the requested result requires internal element motion, the build may proceed only when every major moving foreground object is independently addressable.
+
+Valid independent layers include:
+
+- original product/source components;
+- original SVGs;
+- transparent source assets;
+- user-provided cutouts;
+- simple shapes, typography, glows and signal paths reconstructed in React/SVG;
+- a raster environmental background plate when the background itself is not the animated subject.
+
+A full-scene styleframe may remain a visual reference, but it must not be used as the sole animated foreground when the user expects component-level motion.
+
+Camera drift, parallax, zoom, push-in, pull-back, blur or Three.js displacement applied to one flattened scene do **not** satisfy the Layerability Gate.
+
+If the gate fails, return to decomposition before motion implementation.
+
+## Layer Map
+
+The Motion Spec must identify, per scene:
+
+- background plate;
+- foreground objects;
+- typography;
+- UI/product components;
+- signal/path layers;
+- masks or mattes;
+- layer dependencies;
+- motion responsibility for each major layer.
+
+The Layer Map is the implementation contract for the builder and the QA critics.
 
 ## Creative guidance
 
@@ -46,6 +94,6 @@ QA must be independent from the builder that produced the work.
 
 ## Convergence
 
-Critical issues, major fidelity issues, missing assets, wrong icons, render errors and type errors block delivery.
+Critical issues, major fidelity issues, missing assets, wrong icons, render errors, type errors and Layerability Gate failures block delivery.
 
 Repeated failure of the same technique must trigger Strategy Review instead of another equivalent retry.
