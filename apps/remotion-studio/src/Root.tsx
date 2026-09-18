@@ -59,7 +59,9 @@ const defaultSceneProps: MotionSceneJob = {
       width: 0.94,
       height: 0.92,
       zIndex: 1,
-      originalAsset: true
+      originalAsset: true,
+      sourceKind: "SVG",
+      independentlyAddressable: true
     }
   ]
 };
