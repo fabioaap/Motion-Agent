@@ -7,7 +7,7 @@ import {fileURLToPath} from "node:url";
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const packageJson = JSON.parse(await readFile(join(PACKAGE_ROOT, "package.json"), "utf8"));
 const VERSION = packageJson.version ?? "0.0.0";
-const PIPELINE_VERSION = "layered-motion-templates-v1";
+const PIPELINE_VERSION = "aiox-motion-squad-v1";
 const MANAGED_START = "<!-- motion-agent:start -->";
 const MANAGED_END = "<!-- motion-agent:end -->";
 const GITIGNORE_START = "# motion-agent:start";
