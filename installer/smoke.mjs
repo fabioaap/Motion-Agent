@@ -36,7 +36,10 @@ try {
     ".motion/template-recipes.json",
     ".agents/skills/asset-fidelity/SKILL.md",
     ".agents/skills/scene-director/SKILL.md",
-    ".agents/skills/motion-qa/SKILL.md"
+    ".agents/skills/motion-qa/SKILL.md",
+    "squads/motion-squad/squad.yaml",
+    "squads/motion-squad/workflows/create-motion.yaml",
+    "squads/motion-squad/tasks/request-missing-assets.md"
   ];
   for (const path of required) {
     if (!(await exists(join(target, path)))) throw new Error(`Missing installed path: ${path}`);
@@ -77,6 +80,20 @@ try {
     throw new Error("Installed motion QA skill is missing Layer Separation Critic");
   }
 
+  const squadManifest = await readFile(join(target, "squads", "motion-squad", "squad.yaml"), "utf8");
+  const squadWorkflow = await readFile(join(target, "squads", "motion-squad", "workflows", "create-motion.yaml"), "utf8");
+  const missingAssetsTask = await readFile(join(target, "squads", "motion-squad", "tasks", "request-missing-assets.md"), "utf8");
+  if (!squadManifest.includes("slashPrefix: motion")) throw new Error("Installed Motion Squad is missing slashPrefix");
+  if (
+    squadWorkflow.indexOf("step: missing-assets") < 0 ||
+    squadWorkflow.indexOf("step: missing-assets") > squadWorkflow.indexOf("step: build")
+  ) {
+    throw new Error("Installed Motion Squad does not gate missing assets before build");
+  }
+  if (!missingAssetsTask.includes("WAITING_FOR_ASSETS") || !missingAssetsTask.includes("HARD STOP")) {
+    throw new Error("Installed Motion Squad does not hard-stop when assets are missing");
+  }
+
   const packageJson = JSON.parse(await readFile(join(target, "package.json"), "utf8"));
   if (packageJson.scripts.test !== "echo ok" || !packageJson.scripts["motion:studio"]) {
     throw new Error("package.json scripts were not preserved and patched correctly");
@@ -108,6 +125,7 @@ try {
 
   if (await exists(join(target, ".motion"))) throw new Error(".motion still exists after uninstall");
   if (await exists(join(target, ".agents", "skills", "motion-orchestrator"))) throw new Error("custom skill still exists after uninstall");
+  if (await exists(join(target, "squads", "motion-squad"))) throw new Error("Motion Squad still exists after uninstall");
   const afterAgents = await readFile(join(target, "AGENTS.md"), "utf8");
   if (!afterAgents.includes("Existing project instructions") || afterAgents.includes("motion-agent:start")) {
     throw new Error("AGENTS.md cleanup failed");
