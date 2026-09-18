@@ -5,6 +5,7 @@ import {tmpdir} from "node:os";
 import {fileURLToPath} from "node:url";
 
 const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
+const packageJson = JSON.parse(await readFile(join(repoRoot, "package.json"), "utf8"));
 const temp = await mkdtemp(join(tmpdir(), "motion-agent-package-"));
 const packDir = join(temp, "pack");
 const target = join(temp, "target");
@@ -40,7 +41,9 @@ try {
   for (const relativePath of [
     ".motion/install-manifest.json",
     ".motion/remotion/package.json",
+    ".motion/template-recipes.json",
     ".agents/skills/motion-orchestrator/SKILL.md",
+    ".agents/skills/template-router/SKILL.md",
     ".agents/skills/asset-fidelity/SKILL.md",
     ".agents/skills/scene-director/SKILL.md",
     ".agents/skills/motion-qa/SKILL.md"
