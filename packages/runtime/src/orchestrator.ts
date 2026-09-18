@@ -156,6 +156,7 @@ export class MotionOrchestrator {
         if (!repairedLayerability.pass) {
           return this.setState(context, machine, "HUMAN_INPUT_REQUIRED");
         }
+        context = this.setState(context, machine, "DIRECTION_READY");
         context = this.setState(context, machine, "TEMPLATE_RESOLUTION");
         context.template_selection = TemplateSelectionSchema.parse(
           resolveOfficialRemotionTemplate(context)
