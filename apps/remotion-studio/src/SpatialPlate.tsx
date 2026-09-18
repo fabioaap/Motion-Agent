@@ -9,9 +9,9 @@ import {
 } from "three";
 import {
   AbsoluteFill,
+  Img,
   interpolate,
-  staticFile,
-  useCurrentFrame
+  staticFile
 } from "remotion";
 
 const GREEN = "#3BB56D";
@@ -115,7 +115,35 @@ export const SpatialPlate: React.FC<{
   duration?: number;
   dim?: number;
   blur?: number;
-}> = ({source, f, duration = 60, dim = 0.82}) => {
+  flat?: boolean;
+}> = ({source, f, duration = 60, dim = 0.82, blur = 0, flat = false}) => {
+  if (flat) {
+    const drift = interpolate(f, [0, duration], [-0.7, 0.7], clamp);
+    const zoom = interpolate(f, [0, duration], [1.035, 1.075], clamp);
+    return (
+      <AbsoluteFill style={{overflow: "hidden", backgroundColor: NAVY}}>
+        <Img
+          src={staticFile(source)}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            filter: `brightness(${dim}) saturate(.92) blur(${blur}px)`,
+            transform: `translate3d(${drift}%,0,0) scale(${zoom})`,
+            transformOrigin: "50% 50%"
+          }}
+        />
+        <AbsoluteFill
+          style={{
+            pointerEvents: "none",
+            background:
+              "linear-gradient(90deg,rgba(1,5,67,.36) 0%,rgba(1,5,67,.10) 44%,rgba(1,5,67,.16) 100%),linear-gradient(180deg,rgba(1,5,67,.08),rgba(1,5,67,.28))"
+          }}
+        />
+      </AbsoluteFill>
+    );
+  }
+
   return (
     <AbsoluteFill style={{overflow: "hidden", backgroundColor: NAVY}}>
       <ThreeCanvas
