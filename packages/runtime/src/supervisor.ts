@@ -40,6 +40,20 @@ export class Supervisor {
       }
     }
 
+    if (!context.template_selection) {
+      reasons.push("Official Remotion template resolution has not been recorded");
+    } else {
+      if (!context.template_selection.preserves_host_project) {
+        reasons.push("Selected template does not preserve the host project");
+      }
+      if (!context.template_selection.layerability_gate_unchanged) {
+        reasons.push("Selected template attempts to bypass or weaken the Layerability Gate");
+      }
+      if (context.template_selection.catalog_source !== "https://www.remotion.dev/templates") {
+        reasons.push("Template selection is not bound to the official Remotion catalog");
+      }
+    }
+
     return { approved: reasons.length === 0, reasons };
   }
 }
