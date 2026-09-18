@@ -1,0 +1,331 @@
+{
+  "schemaVersion": 1,
+  "lastReviewed": "2026-09-18",
+  "catalog": "https://www.remotion.dev/templates",
+  "policy": {
+    "sourceOfTruth": "official-remotion-template-catalog",
+    "defaultTemplate": "blank",
+    "preserveHostProjectSource": true,
+    "templatesAreTechniqueReferencesNotVisualStyle": true,
+    "neverBypassLayerabilityGate": true,
+    "neverReplaceApprovedBrandOrUIWithTemplateVisuals": true,
+    "scaffoldOnlyInsideIsolatedMotionWorkspaceUnlessUserExplicitlyRequestsOtherwise": true
+  },
+  "templates": [
+    {
+      "id": "blank",
+      "name": "Blank",
+      "page": "https://www.remotion.dev/templates/blank",
+      "command": "pnpm create video --blank",
+      "role": "general-product-motion",
+      "useWhen": [
+        "custom React motion",
+        "AI-authored motion",
+        "existing product UI",
+        "no specialized runtime needed"
+      ],
+      "avoidWhen": [
+        "specialized 3D, Skia, captions or audio visualization is clearly required"
+      ]
+    },
+    {
+      "id": "hello-world",
+      "name": "Hello World",
+      "page": "https://www.remotion.dev/templates/hello-world",
+      "command": "pnpm create video --hello-world",
+      "role": "learning-baseline",
+      "useWhen": [
+        "basic Remotion playground",
+        "learning or minimal demo"
+      ],
+      "avoidWhen": [
+        "production product motion where Blank is sufficient"
+      ]
+    },
+    {
+      "id": "next",
+      "name": "Next.js",
+      "page": "https://www.remotion.dev/templates/next",
+      "command": "pnpm create video --next",
+      "role": "video-generation-app",
+      "useWhen": [
+        "Next.js app that generates videos",
+        "Remotion Player plus rendering app"
+      ],
+      "avoidWhen": [
+        "single motion composition inside an existing product repository"
+      ]
+    },
+    {
+      "id": "vercel",
+      "name": "Next.js (Vercel Sandbox)",
+      "page": "https://www.remotion.dev/templates/vercel",
+      "command": "pnpm create video --vercel",
+      "role": "vercel-sandbox-rendering",
+      "useWhen": [
+        "on-demand rendering through Vercel Sandbox"
+      ],
+      "avoidWhen": [
+        "local product motion only"
+      ]
+    },
+    {
+      "id": "next-no-tailwind",
+      "name": "Next.js (No Tailwind)",
+      "page": "https://www.remotion.dev/templates/next-no-tailwind",
+      "command": "pnpm create video --next-no-tailwind",
+      "role": "video-generation-app",
+      "useWhen": [
+        "Next.js video app without Tailwind"
+      ],
+      "avoidWhen": [
+        "single motion composition"
+      ]
+    },
+    {
+      "id": "next-pages-dir",
+      "name": "Next.js (Pages dir)",
+      "page": "https://www.remotion.dev/templates/next-pages-dir",
+      "command": "pnpm create video --next-pages-dir",
+      "role": "legacy-next-video-app",
+      "useWhen": [
+        "Next.js Pages Router video app"
+      ],
+      "avoidWhen": [
+        "App Router or standalone motion"
+      ]
+    },
+    {
+      "id": "recorder",
+      "name": "Recorder",
+      "page": "https://www.remotion.dev/templates/recorder",
+      "command": "pnpm create video --recorder",
+      "role": "browser-recorder",
+      "useWhen": [
+        "browser-based video recording or production tool"
+      ],
+      "avoidWhen": [
+        "ordinary motion graphics"
+      ]
+    },
+    {
+      "id": "prompt-to-motion-graphics",
+      "name": "Prompt to Motion Graphics SaaS Starter Kit",
+      "page": "https://www.remotion.dev/templates/prompt-to-motion-graphics",
+      "command": "pnpm create video --prompt-to-motion-graphics",
+      "role": "ai-motion-generation-app",
+      "useWhen": [
+        "prompt-to-motion product",
+        "streaming generated Remotion code to a browser preview"
+      ],
+      "avoidWhen": [
+        "directed product film with approved art direction"
+      ]
+    },
+    {
+      "id": "javascript",
+      "name": "Hello World (JavaScript)",
+      "page": "https://www.remotion.dev/templates/javascript",
+      "command": "pnpm create video --javascript",
+      "role": "javascript-baseline",
+      "useWhen": [
+        "plain JavaScript is explicitly required"
+      ],
+      "avoidWhen": [
+        "TypeScript project"
+      ]
+    },
+    {
+      "id": "render-server",
+      "name": "Render Server",
+      "page": "https://www.remotion.dev/templates/render-server",
+      "command": "pnpm create video --render-server",
+      "role": "express-render-service",
+      "useWhen": [
+        "Express.js render server"
+      ],
+      "avoidWhen": [
+        "local-only motion"
+      ]
+    },
+    {
+      "id": "electron",
+      "name": "Electron",
+      "page": "https://www.remotion.dev/templates/electron",
+      "command": "pnpm create video --electron",
+      "role": "desktop-render-app",
+      "useWhen": [
+        "desktop app that renders Remotion video"
+      ],
+      "avoidWhen": [
+        "web or local composition only"
+      ]
+    },
+    {
+      "id": "react-router",
+      "name": "React Router",
+      "page": "https://www.remotion.dev/templates/react-router",
+      "command": "pnpm create video --react-router",
+      "role": "react-router-video-app",
+      "useWhen": [
+        "React Router app that generates videos"
+      ],
+      "avoidWhen": [
+        "standalone motion composition"
+      ]
+    },
+    {
+      "id": "three",
+      "name": "React Three Fiber",
+      "page": "https://www.remotion.dev/templates/three",
+      "sourceRepo": "https://github.com/remotion-dev/template-three",
+      "command": "pnpm create video --three",
+      "role": "3d-spatial-motion",
+      "useWhen": [
+        "true 3D geometry",
+        "3D camera",
+        "React Three Fiber",
+        "spatial product mockups",
+        "depth that requires actual 3D"
+      ],
+      "avoidWhen": [
+        "using 3D only to fake separation of a flattened styleframe",
+        "simple 2D layer motion"
+      ]
+    },
+    {
+      "id": "still",
+      "name": "Still images",
+      "page": "https://www.remotion.dev/templates/still",
+      "command": "pnpm create video --still",
+      "role": "dynamic-stills",
+      "useWhen": [
+        "dynamic PNG or JPEG generation"
+      ],
+      "avoidWhen": [
+        "time-based video motion is required"
+      ]
+    },
+    {
+      "id": "audiogram",
+      "name": "Audiogram",
+      "page": "https://www.remotion.dev/templates/audiogram",
+      "sourceRepo": "https://github.com/remotion-dev/template-audiogram",
+      "command": "pnpm create video --audiogram",
+      "role": "podcast-social-video",
+      "useWhen": [
+        "podcast clips",
+        "speech waveform",
+        "social video driven by audio"
+      ],
+      "avoidWhen": [
+        "product UI motion without audio visualization"
+      ]
+    },
+    {
+      "id": "music-visualization",
+      "name": "Music Visualization",
+      "page": "https://www.remotion.dev/templates/music-visualization",
+      "sourceRepo": "https://github.com/remotion-dev/template-music-visualization",
+      "command": "pnpm create video --music-visualization",
+      "role": "music-social-video",
+      "useWhen": [
+        "music snippets",
+        "waveform or music-driven visuals"
+      ],
+      "avoidWhen": [
+        "speech captions or product motion"
+      ]
+    },
+    {
+      "id": "prompt-to-video",
+      "name": "Prompt to Video",
+      "page": "https://www.remotion.dev/templates/prompt-to-video",
+      "sourceRepo": "https://github.com/remotion-dev/template-prompt-to-video",
+      "command": "pnpm create video --prompt-to-video",
+      "role": "generative-story-video",
+      "useWhen": [
+        "prompt-generated script, images and voiceover pipeline"
+      ],
+      "avoidWhen": [
+        "approved visual assets must remain source of truth"
+      ]
+    },
+    {
+      "id": "skia",
+      "name": "Skia",
+      "page": "https://www.remotion.dev/templates/skia",
+      "sourceRepo": "https://github.com/remotion-dev/template-skia",
+      "command": "pnpm create video --skia",
+      "role": "canvas-vector-effects",
+      "useWhen": [
+        "React Native Skia drawing",
+        "custom shader-like 2D effects",
+        "high-performance canvas rendering"
+      ],
+      "avoidWhen": [
+        "ordinary DOM/SVG motion can solve the scene more simply"
+      ]
+    },
+    {
+      "id": "overlay",
+      "name": "Overlay",
+      "page": "https://www.remotion.dev/templates/overlay",
+      "sourceRepo": "https://github.com/remotion-dev/template-overlay",
+      "command": "pnpm create video --overlay",
+      "role": "transparent-video-overlay",
+      "useWhen": [
+        "alpha overlays for traditional video editors",
+        "lower thirds or compositing elements"
+      ],
+      "avoidWhen": [
+        "self-contained product film"
+      ]
+    },
+    {
+      "id": "code-hike",
+      "name": "Code Hike",
+      "page": "https://www.remotion.dev/templates/code-hike",
+      "sourceRepo": "https://github.com/remotion-dev/template-code-hike",
+      "command": "pnpm create video --code-hike",
+      "role": "code-animation",
+      "useWhen": [
+        "animated code snippets",
+        "developer education",
+        "code diff storytelling"
+      ],
+      "avoidWhen": [
+        "non-code product motion"
+      ]
+    },
+    {
+      "id": "stargazer",
+      "name": "Stargazer",
+      "page": "https://www.remotion.dev/templates/stargazer",
+      "command": "pnpm create video --stargazer",
+      "role": "github-stars-video",
+      "useWhen": [
+        "GitHub star celebration video"
+      ],
+      "avoidWhen": [
+        "general product motion"
+      ]
+    },
+    {
+      "id": "tiktok",
+      "name": "TikTok",
+      "page": "https://www.remotion.dev/templates/tiktok",
+      "sourceRepo": "https://github.com/remotion-dev/template-tiktok",
+      "command": "pnpm create video --tiktok",
+      "role": "word-captions",
+      "useWhen": [
+        "animated word-by-word captions",
+        "local Whisper.cpp transcription",
+        "short-form talking-head captions"
+      ],
+      "avoidWhen": [
+        "product motion without captioning"
+      ]
+    }
+  ]
+}
