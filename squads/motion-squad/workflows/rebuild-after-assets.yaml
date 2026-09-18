@@ -1,39 +1,52 @@
 workflow:
   id: rebuild-after-assets
-  name: Resume a blocked motion job after missing assets arrive
-  entry_task: audit-scene-topology.md
+  name: Resume motion after missing assets arrive
+  description: Re-audits the scene after requested assets arrive and resumes only if the Missing Assets Gate passes.
+  type: sequential
 
   sequence:
     - step: re-audit
       task: audit-scene-topology.md
       agent: asset-intake-specialist
-
-    - step: gate
-      checklist: missing-assets-gate.md
+      action: Rebuild the asset inventory and Layer Map from the newly supplied source material.
 
     - step: stop-if-still-blocked
       task: request-missing-assets.md
       agent: asset-intake-specialist
       condition: layerability_status == BLOCKED_MISSING_ASSETS
-      stop_on_success: true
+      action: Request the remaining exact assets and hard-stop again.
       terminal_status: WAITING_FOR_ASSETS
 
     - step: strategy
       task: resolve-motion-strategy.md
       agent: motion-director
+      condition: layerability_status != BLOCKED_MISSING_ASSETS
+      action: Refresh motion strategy against the new Layer Map.
 
     - step: template
       task: resolve-template.md
       agent: template-resolver
+      action: Resolve the Remotion technical baseline from the refreshed motion direction.
 
     - step: build
       task: build-motion-scene.md
       agent: remotion-builder
+      action: Build the now-layerable scene.
 
     - step: qa
       task: review-motion-scene.md
       agent: motion-qa
+      action: Run structural and visual QA.
 
     - step: human-gate
-      checklist: ready-for-human-checklist.md
+      agent: layerability-guard
+      action: Validate ready-for-human-checklist.md and expose READY_FOR_HUMAN only on pass.
+      validates: ready-for-human-checklist.md
       terminal_status: READY_FOR_HUMAN
+
+  handoff_prompts:
+    asset-intake-specialist_to_motion-director: Pass the updated Layer Map and resolved/missing asset status.
+    motion-director_to_template-resolver: Pass refreshed technique requirements.
+    template-resolver_to_remotion-builder: Pass the selected technical baseline without changing approved visuals.
+    remotion-builder_to_motion-qa: Pass preview, buildNotes and Layer Map.
+    motion-qa_to_layerability-guard: Pass mandatory QA results for the human gate.
