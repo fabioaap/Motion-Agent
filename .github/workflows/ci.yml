@@ -30,7 +30,9 @@ jobs:
       - run: pnpm render:demo
       - run: pnpm render:job
       - run: pnpm render:scene
+      - run: pnpm --filter @motion-agent/remotion-studio render:adsmagic
       - run: pnpm --filter @motion-agent/remotion-studio exec remotion still src/index.ts MotionScene out/motion-scene-still.png --frame=0 --props=jobs/scene-job.json
+      - run: pnpm --filter @motion-agent/remotion-studio exec remotion still src/index.ts AdsmagicClickToSale out/adsmagic-do-clique-a-venda-still.png --frame=0
       - uses: actions/upload-artifact@v4
         with:
           name: motion-agent-previews
@@ -39,5 +41,7 @@ jobs:
             apps/remotion-studio/out/motion-job-preview.mp4
             apps/remotion-studio/out/motion-scene.mp4
             apps/remotion-studio/out/motion-scene-still.png
+            apps/remotion-studio/out/adsmagic-do-clique-a-venda.mp4
+            apps/remotion-studio/out/adsmagic-do-clique-a-venda-still.png
             apps/remotion-studio/out/qa/qa_preview_smoke/**/*
           if-no-files-found: error
