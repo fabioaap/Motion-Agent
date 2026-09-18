@@ -50,7 +50,7 @@ export function planExecutionGraph(context: JobContext): ExecutionGraph {
         "creative_reference_agent",
         "creative_reference_agent",
         "DISCOVERY",
-        [needsSource ? "source_asset_agent" : "asset_inspector"]
+        [needsSource ? "source_asset_agent" : "decomposition_agent"]
       )
     );
   }
