@@ -115,15 +115,40 @@ async function copyCustomSkills(target) {
   }
 }
 
+function mergeConfigDefaults(defaults, existing) {
+  if (
+    !defaults ||
+    typeof defaults !== "object" ||
+    Array.isArray(defaults) ||
+    !existing ||
+    typeof existing !== "object" ||
+    Array.isArray(existing)
+  ) {
+    return existing === undefined ? defaults : existing;
+  }
+
+  const merged = {...defaults};
+  for (const [key, value] of Object.entries(existing)) {
+    merged[key] = key in defaults
+      ? mergeConfigDefaults(defaults[key], value)
+      : value;
+  }
+  return merged;
+}
+
 async function copyMotionTemplate(target, preserveConfig = true) {
   const source = join(PACKAGE_ROOT, "installer", "template", "motion");
   const dest = join(target, ".motion");
   const oldConfig = preserveConfig && await exists(join(dest, "config.json"))
-    ? await readFile(join(dest, "config.json"), "utf8")
+    ? JSON.parse(await readFile(join(dest, "config.json"), "utf8"))
     : null;
   await mkdir(dest, {recursive: true});
   await cp(source, dest, {recursive: true, force: true});
-  if (oldConfig) await writeFile(join(dest, "config.json"), oldConfig, "utf8");
+  if (oldConfig) {
+    const defaultConfig = JSON.parse(await readFile(join(dest, "config.json"), "utf8"));
+    const mergedConfig = mergeConfigDefaults(defaultConfig, oldConfig);
+    await writeFile(join(dest, "config.json"), `${JSON.stringify(mergedConfig, null, 2)}\n`, "utf8");
+  }
 }
 
 async function writeManifest(target) {
@@ -204,7 +229,15 @@ async function doctor(target, flags) {
   add("install manifest", await exists(manifestPath), ".motion/install-manifest.json");
   const manifest = JSON.parse(await readText(manifestPath, "{}"));
   add("pipeline version", manifest.pipelineVersion === PIPELINE_VERSION, manifest.pipelineVersion ?? "missing");
-  add("Motion config", await exists(join(target, ".motion", "config.json")), ".motion/config.json");
+  const motionConfigPath = join(target, ".motion", "config.json");
+  add("Motion config", await exists(motionConfigPath), ".motion/config.json");
+  const motionConfig = JSON.parse(await readText(motionConfigPath, "{}"));
+  add(
+    "Template resolution config",
+    motionConfig.templateResolution?.enabled === true &&
+      motionConfig.templateResolution?.registry === ".motion/template-recipes.json",
+    "templateResolution.enabled + registry"
+  );
   add("Remotion workspace", await exists(join(target, ".motion", "remotion", "package.json")), ".motion/remotion/package.json");
   for (const skill of CUSTOM_SKILLS) {
     add(`skill:${skill}`, await exists(join(target, ".agents", "skills", skill, "SKILL.md")), `.agents/skills/${skill}/SKILL.md`);
