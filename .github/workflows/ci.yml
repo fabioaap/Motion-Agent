@@ -26,11 +26,36 @@ jobs:
       - run: pnpm --filter @motion-agent/node-tools preview-smoke
       - run: pnpm demo
       - run: pnpm demo:command
+      - name: Reconstruct Adsmagic styleframes
+        run: |
+          base64 -d apps/remotion-studio/public/adsmagic-do-clique-a-venda/chunks/hook.b64 > apps/remotion-studio/public/adsmagic-do-clique-a-venda/hook.webp
+          base64 -d apps/remotion-studio/public/adsmagic-do-clique-a-venda/chunks/context.b64 > apps/remotion-studio/public/adsmagic-do-clique-a-venda/context.webp
+          test $(stat -c%s apps/remotion-studio/public/adsmagic-do-clique-a-venda/hook.webp) -gt 12000
+          test $(stat -c%s apps/remotion-studio/public/adsmagic-do-clique-a-venda/context.webp) -gt 10000
       - run: pnpm --filter @motion-agent/remotion-studio compositions
       - run: pnpm render:demo
       - run: pnpm render:job
       - run: pnpm render:scene
+      - run: pnpm --filter @motion-agent/remotion-studio render:adsmagic
       - run: pnpm --filter @motion-agent/remotion-studio exec remotion still src/index.ts MotionScene out/motion-scene-still.png --frame=0 --props=jobs/scene-job.json
+      - run: pnpm --filter @motion-agent/remotion-studio exec remotion still src/index.ts AdsmagicClickToSale out/adsmagic-do-clique-a-venda-still.png --frame=0
+      - name: Render Adsmagic QA checkpoints
+        working-directory: apps/remotion-studio
+        run: |
+          mkdir -p out/adsmagic-qa
+          for frame in 0 60 120 180 255 330 405 495 539; do
+            npx remotion still src/index.ts AdsmagicClickToSale "out/adsmagic-qa/frame-${frame}.png" --frame=${frame}
+          done
+      - name: Install FFmpeg for contact sheet
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Build Adsmagic contact sheet
+        working-directory: apps/remotion-studio
+        run: |
+          ffmpeg -y -i out/adsmagic-do-clique-a-venda.mp4 \
+            -vf "select='eq(n,0)+eq(n,60)+eq(n,120)+eq(n,180)+eq(n,255)+eq(n,330)+eq(n,405)+eq(n,495)+eq(n,539)',scale=640:360,tile=3x3:padding=8:margin=8" \
+            -frames:v 1 out/adsmagic-qa/contact-sheet.png
       - uses: actions/upload-artifact@v4
         with:
           name: motion-agent-previews
@@ -39,5 +64,8 @@ jobs:
             apps/remotion-studio/out/motion-job-preview.mp4
             apps/remotion-studio/out/motion-scene.mp4
             apps/remotion-studio/out/motion-scene-still.png
+            apps/remotion-studio/out/adsmagic-do-clique-a-venda.mp4
+            apps/remotion-studio/out/adsmagic-do-clique-a-venda-still.png
+            apps/remotion-studio/out/adsmagic-qa/*.png
             apps/remotion-studio/out/qa/qa_preview_smoke/**/*
           if-no-files-found: error

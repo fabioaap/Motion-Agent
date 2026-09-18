@@ -9,18 +9,23 @@
     "render:demo": "remotion render src/index.ts MotionAgentDemo out/motion-agent-demo.mp4",
     "render:job": "remotion render src/index.ts MotionJobPreview out/motion-job-preview.mp4 --props=jobs/example-job.json",
     "render:scene": "remotion render src/index.ts MotionScene out/motion-scene.mp4 --props=jobs/scene-job.json",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "render:adsmagic": "remotion render src/index.ts AdsmagicClickToSale out/adsmagic-do-clique-a-venda.mp4"
   },
   "dependencies": {
     "@motion-agent/runtime": "workspace:*",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "remotion": "4.0.525"
+    "remotion": "4.0.525",
+    "@react-three/fiber": "9.2.0",
+    "@remotion/three": "4.0.525",
+    "three": "0.178.0"
   },
   "devDependencies": {
     "@remotion/cli": "4.0.525",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "@types/three": "0.170.0"
   }
 }
