@@ -22,6 +22,7 @@ for (const name of [
   "director",
   "asset_inspector",
   "decomposition_agent",
+  "template_resolver",
   "creative_reference_agent",
   "motion_director",
   "motion_spec_agent",
@@ -120,6 +121,7 @@ console.log(JSON.stringify({
   state: result.context.state,
   request: result.context.metadata.invocation,
   materials: result.context.brief.materials,
+  template: result.context.template_selection,
   scene: {
     composition: "MotionScene",
     layers: result.scene.layers.length,
