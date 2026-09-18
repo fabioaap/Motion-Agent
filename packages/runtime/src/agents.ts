@@ -17,6 +17,7 @@ export type AgentName =
   | "brand_system_specialist"
   | "fidelity_critic"
   | "visual_fidelity_critic"
+  | "layerability_critic"
   | "motion_critic"
   | "composition_critic"
   | "brand_critic"
