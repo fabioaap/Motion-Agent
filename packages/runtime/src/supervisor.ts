@@ -24,6 +24,22 @@ export class Supervisor {
       reasons.push("Original asset fidelity violation detected");
     }
 
+    if (context.brief.component_motion_required) {
+      if (!context.decomposition) {
+        reasons.push("Component motion requires a decomposition and verified Layer Map");
+      } else {
+        if (context.decomposition.layerability_status !== "LAYERED_READY") {
+          reasons.push("Layerability Gate has not reached LAYERED_READY");
+        }
+        if (!context.decomposition.layer_map_verified) {
+          reasons.push("Layer Map is not verified");
+        }
+        if (context.decomposition.full_scene_flattened_foreground) {
+          reasons.push("Flattened full-scene foreground is still present");
+        }
+      }
+    }
+
     return { approved: reasons.length === 0, reasons };
   }
 }
