@@ -1,5 +1,6 @@
 import React from "react";
 import {SpatialPlate} from "./SpatialPlate";
+import {AdsmagicScene1Layered} from "./AdsmagicScene1Layered";
 import {
   AbsoluteFill,
   Easing,
@@ -640,11 +641,7 @@ const DashboardPanel: React.FC<{f: number}> = ({f}) => (
 );
 
 const Scene1: React.FC<{f: number}> = ({f}) => (
-  <AbsoluteFill>
-    <CinematicPlate source="adsmagic-do-clique-a-venda/hook.webp" f={f} duration={60} dim={0.82} blur={0.45} />
-    <JourneyHighlight progress={p(f, -8, 50, soft)} />
-    <ClickMarker progress={p(f, 18, 42)} x={790} y={555} />
-  </AbsoluteFill>
+  <AdsmagicScene1Layered frameOverride={f} />
 );
 
 const Scene2: React.FC<{f: number}> = ({f}) => (
