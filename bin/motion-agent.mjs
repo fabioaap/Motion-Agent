@@ -195,6 +195,7 @@ async function doctor(target, flags) {
   add("pnpm available", pnpm.status === 0, (pnpm.stdout || pnpm.stderr || "not found").trim());
   add("install manifest", await exists(join(target, ".motion", "install-manifest.json")), ".motion/install-manifest.json");
   add("Motion config", await exists(join(target, ".motion", "config.json")), ".motion/config.json");
+  add("Template recipe registry", await exists(join(target, ".motion", "template-recipes.json")), ".motion/template-recipes.json");
   add("Remotion workspace", await exists(join(target, ".motion", "remotion", "package.json")), ".motion/remotion/package.json");
   for (const skill of CUSTOM_SKILLS) {
     add(`skill:${skill}`, await exists(join(target, ".agents", "skills", skill, "SKILL.md")), `.agents/skills/${skill}/SKILL.md`);
