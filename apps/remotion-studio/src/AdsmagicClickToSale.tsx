@@ -104,30 +104,53 @@ const ComponentLayer: React.FC<{
   toY = 0,
   fromScale = 1,
   toScale = 1,
-  opacity = 1,
+  opacity = 0.72,
   brightness = 1,
   z = 2
 }) => {
-  const x = interpolate(p, [0, 1], [fromX, toX], clamp);
-  const y = interpolate(p, [0, 1], [fromY, toY], clamp);
+  const [top, right, bottom, left] = crop;
+  const leftPx = 1920 * (left / 100);
+  const topPx = 1080 * (top / 100);
+  const widthPx = 1920 * ((100 - left - right) / 100);
+  const heightPx = 1080 * ((100 - top - bottom) / 100);
+
+  const x = interpolate(p, [0, 1], [fromX * 24, toX * 24], clamp);
+  const y = interpolate(p, [0, 1], [fromY * 24, toY * 24], clamp);
   const scale = interpolate(p, [0, 1], [fromScale, toScale], clamp);
 
   return (
-    <AbsoluteFill style={{zIndex: z, pointerEvents: "none"}}>
+    <div
+      style={{
+        position: "absolute",
+        left: leftPx,
+        top: topPx,
+        width: widthPx,
+        height: heightPx,
+        overflow: "hidden",
+        zIndex: z,
+        opacity: opacity * p,
+        pointerEvents: "none",
+        transform: `translate3d(${x}px, ${y}px, 0) scale(${scale})`,
+        transformOrigin: "50% 50%",
+        WebkitMaskImage:
+          "radial-gradient(ellipse at center, #000 58%, rgba(0,0,0,.94) 72%, transparent 100%)",
+        maskImage:
+          "radial-gradient(ellipse at center, #000 58%, rgba(0,0,0,.94) 72%, transparent 100%)"
+      }}
+    >
       <Img
         src={staticFile(source)}
         style={{
-          width: "100%",
-          height: "100%",
+          position: "absolute",
+          left: -leftPx,
+          top: -topPx,
+          width: 1920,
+          height: 1080,
           objectFit: "cover",
-          clipPath: cropPath(crop),
-          opacity: opacity * p,
-          filter: `brightness(${brightness})`,
-          transform: `translate(${x}%, ${y}%) scale(${scale})`,
-          transformOrigin: "50% 50%"
+          filter: `brightness(${brightness}) saturate(1.01)`
         }}
       />
-    </AbsoluteFill>
+    </div>
   );
 };
 
@@ -188,36 +211,20 @@ const FocusPulse: React.FC<{x: number; y: number; p: number; size?: number}> = (
 };
 
 const DataPrivacyMask: React.FC = () => (
-  <>
-    <div
-      style={{
-        position: "absolute",
-        left: 1185,
-        top: 650,
-        width: 330,
-        height: 110,
-        borderRadius: 20,
-        background: "rgba(1,5,67,.90)",
-        backdropFilter: "blur(18px)",
-        WebkitBackdropFilter: "blur(18px)",
-        zIndex: 8
-      }}
-    />
-    <div
-      style={{
-        position: "absolute",
-        left: 1460,
-        top: 700,
-        width: 320,
-        height: 125,
-        borderRadius: 22,
-        background: "rgba(1,5,67,.88)",
-        backdropFilter: "blur(18px)",
-        WebkitBackdropFilter: "blur(18px)",
-        zIndex: 8
-      }}
-    />
-  </>
+  <div
+    style={{
+      position: "absolute",
+      left: 1075,
+      top: 590,
+      width: 790,
+      height: 270,
+      borderRadius: "0 0 28px 28px",
+      background:
+        "linear-gradient(180deg, rgba(1,5,67,0) 0%, rgba(1,5,67,.76) 28%, rgba(1,5,67,.97) 58%, rgba(1,5,67,1) 100%)",
+      zIndex: 8,
+      pointerEvents: "none"
+    }}
+  />
 );
 
 const SceneHook: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame}) => {
@@ -228,7 +235,7 @@ const SceneHook: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame}) 
 
   return (
     <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.74} x={-0.45} zoom={0.028} />
+      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.90} x={-0.45} zoom={0.028} />
       <ComponentLayer source={scene.source} crop={[0, 46, 55, 0]} p={enter} fromX={-1.1} toX={0} fromY={0.25} toY={0} brightness={1.12} z={5} />
       <ComponentLayer source={scene.source} crop={[44, 78, 2, 1]} p={objects} fromY={1.1} toY={0.1} fromScale={0.98} toScale={1.005} brightness={1.06} />
       <ComponentLayer source={scene.source} crop={[33, 57, 0, 31]} p={progress(lf, 13, 36)} fromY={1.6} toY={0} fromScale={0.975} toScale={1.01} />
@@ -247,7 +254,7 @@ const SceneAd: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame}) =>
 
   return (
     <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.78} x={-0.25} zoom={0.022} />
+      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.90} x={-0.25} zoom={0.022} />
       <ComponentLayer source={scene.source} crop={[16, 43, 12, 23]} p={card} fromX={-1.4} toX={0} fromScale={0.96} toScale={1.01} brightness={1.08} z={5} />
       <ComponentLayer source={scene.source} crop={[5, 0, 8, 68]} p={phone} fromX={1.2} toX={0} fromScale={0.98} toScale={1.012} brightness={1.04} />
       <SignalReveal source={scene.source} p={signal} top={37} bottom={25} opacity={0.94} />
@@ -264,7 +271,7 @@ const SceneClick: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame})
 
   return (
     <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.77} x={0.32} zoom={0.025} />
+      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.90} x={0.32} zoom={0.025} />
       <ComponentLayer source={scene.source} crop={[10, 48, 13, 12]} p={ad} fromX={-0.8} toX={0.2} fromScale={0.985} toScale={1.015} brightness={1.05} />
       <SignalReveal source={scene.source} p={bridge} top={36} bottom={22} opacity={0.98} />
       <ComponentLayer source={scene.source} crop={[5, 2, 7, 67]} p={phone} fromX={1.4} toX={0} fromScale={0.96} toScale={1.015} brightness={1.06} z={5} />
@@ -282,7 +289,7 @@ const SceneConversation: React.FC<{scene: SceneSpec; frame: number}> = ({scene, 
 
   return (
     <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.75} x={-0.2} zoom={0.02} />
+      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.89} x={-0.2} zoom={0.02} />
       <ComponentLayer source={scene.source} crop={[5, 26, 1, 31]} p={phone} fromY={1.15} toY={0} fromScale={0.975} toScale={1.012} brightness={1.05} z={5} />
       <ComponentLayer source={scene.source} crop={[34, 35, 47, 43]} p={message1} fromX={0.4} toX={0} fromY={0.8} toY={0} brightness={1.11} z={6} />
       <ComponentLayer source={scene.source} crop={[49, 34, 32, 41]} p={message2} fromX={0.5} toX={0} fromY={0.7} toY={0} brightness={1.12} z={6} />
@@ -300,7 +307,7 @@ const SceneContext: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame
 
   return (
     <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.75} x={0.25} zoom={0.02} />
+      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.89} x={0.25} zoom={0.02} />
       <ComponentLayer source={scene.source} crop={[6, 55, 2, 19]} p={phone} fromX={-0.8} toX={0} fromScale={0.98} toScale={1.01} brightness={1.04} z={4} />
       <ComponentLayer source={scene.source} crop={[13, 9, 11, 47]} p={eventPanel} fromX={1.0} toX={0} fromScale={0.97} toScale={1.012} brightness={1.07} z={5} />
       <ComponentLayer source={scene.source} crop={[31, 12, 24, 49]} p={checks} fromY={0.9} toY={0} brightness={1.11} z={6} />
@@ -318,7 +325,7 @@ const SceneOrder: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame})
 
   return (
     <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.76} x={-0.18} zoom={0.021} />
+      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.90} x={-0.18} zoom={0.021} />
       <ComponentLayer source={scene.source} crop={[12, 58, 6, 8]} p={context} fromX={-0.8} toX={0} brightness={1.02} />
       <ComponentLayer source={scene.source} crop={[17, 7, 9, 48]} p={order} fromX={0.9} toX={0} fromScale={0.975} toScale={1.01} brightness={1.07} z={5} />
       <ComponentLayer source={scene.source} crop={[9, 9, 54, 69]} p={success} fromScale={0.82} toScale={1.0} brightness={1.12} z={6} />
@@ -337,7 +344,7 @@ const SceneOverview: React.FC<{scene: SceneSpec; frame: number}> = ({scene, fram
 
   return (
     <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.68} x={-0.12} zoom={0.018} />
+      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.87} x={-0.12} zoom={0.018} />
       <ComponentLayer source={scene.source} crop={[3, 52, 62, 0]} p={title} fromX={-0.8} toX={0} brightness={1.12} z={5} />
       <ComponentLayer source={scene.source} crop={[28, 28, 0, 15]} p={journey} fromY={0.9} toY={0} fromScale={0.985} toScale={1.01} brightness={1.03} z={4} />
       <ComponentLayer source={scene.source} crop={[12, 0, 1, 56]} p={dashboard} fromX={0.8} toX={0} fromScale={0.98} toScale={1.01} brightness={1.05} z={5} />
@@ -355,7 +362,7 @@ const SceneEnd: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame}) =
 
   return (
     <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.78} x={0.22} zoom={-0.012} />
+      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.92} x={0.22} zoom={-0.012} />
       <ComponentLayer source={scene.source} crop={[0, 46, 55, 0]} p={title} fromX={-0.55} toX={0} brightness={1.12} z={6} />
       <ComponentLayer source={scene.source} crop={[31, 0, 0, 0]} p={settle} fromY={0.55} toY={0} fromScale={1.012} toScale={1.0} brightness={1.02} z={4} />
       <SignalReveal source={scene.source} p={signal} top={34} bottom={17} opacity={0.96} />
