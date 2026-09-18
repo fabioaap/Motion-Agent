@@ -8,407 +8,549 @@ import {
   useCurrentFrame
 } from "remotion";
 
-const FADE = 7;
-const GREEN = "#3BB56D";
 const NAVY = "#010543";
-
-type SceneSpec = {
-  id: string;
-  source: string;
-  start: number;
-  end: number;
-};
-
-type Crop = [top: number, right: number, bottom: number, left: number];
-
-const scenes: SceneSpec[] = [
-  {id: "hook", source: "adsmagic-do-clique-a-venda/hook.webp", start: 0, end: 60},
-  {id: "anuncio", source: "adsmagic-do-clique-a-venda/ad.webp", start: 60, end: 120},
-  {id: "clique-whatsapp", source: "adsmagic-do-clique-a-venda/click.webp", start: 120, end: 180},
-  {id: "conversa", source: "adsmagic-do-clique-a-venda/conversation.webp", start: 180, end: 255},
-  {id: "contexto-evento", source: "adsmagic-do-clique-a-venda/context.webp", start: 255, end: 330},
-  {id: "pedido-confirmado", source: "adsmagic-do-clique-a-venda/order.webp", start: 330, end: 405},
-  {id: "visao-consolidada", source: "adsmagic-do-clique-a-venda/overview.webp", start: 405, end: 495},
-  {id: "encerramento", source: "adsmagic-do-clique-a-venda/hook.webp", start: 495, end: 540}
-];
+const NAVY_2 = "#000E50";
+const GREEN = "#3BB56D";
+const CYAN = "#22D3EE";
+const WHITE = "#FFFFFF";
+const MUTED = "#B7C5E4";
+const PANEL = "rgba(255,255,255,.075)";
+const BORDER = "rgba(255,255,255,.14)";
+const FPS = 30;
 
 const clamp = {
   extrapolateLeft: "clamp" as const,
   extrapolateRight: "clamp" as const
 };
 
-const cinematic = Easing.bezier(0.22, 1, 0.36, 1);
+const ease = Easing.bezier(0.22, 1, 0.36, 1);
 const soft = Easing.bezier(0.42, 0, 0.2, 1);
 
-const local = (frame: number, scene: SceneSpec) => frame - scene.start;
-const duration = (scene: SceneSpec) => scene.end - scene.start;
+const p = (f: number, a: number, b: number, easing = ease) =>
+  interpolate(f, [a, b], [0, 1], {...clamp, easing});
 
-function progress(frame: number, start: number, end: number, easing = cinematic) {
-  return interpolate(frame, [start, end], [0, 1], {...clamp, easing});
-}
+const sceneLocal = (frame: number, start: number) => frame - start;
 
-function sceneOpacity(scene: SceneSpec, frame: number, index: number) {
-  const first = index === 0;
-  const last = index === scenes.length - 1;
-  const fadeIn = first ? 1 : interpolate(frame, [scene.start - FADE, scene.start + FADE], [0, 1], clamp);
-  const fadeOut = last ? 1 : interpolate(frame, [scene.end - FADE, scene.end + FADE], [1, 0], clamp);
-  return Math.min(fadeIn, fadeOut);
-}
-
-const cropPath = ([top, right, bottom, left]: Crop) =>
-  `inset(${top}% ${right}% ${bottom}% ${left}%)`;
-
-const BaseFrame: React.FC<{
-  source: string;
-  p: number;
-  dim?: number;
+const Layer: React.FC<React.PropsWithChildren<{
+  progress: number;
   x?: number;
   y?: number;
-  zoom?: number;
-  blur?: number;
-}> = ({source, p, dim = 0.82, x = 0, y = 0, zoom = 0.03, blur = 0}) => (
-  <AbsoluteFill>
-    <Img
-      src={staticFile(source)}
-      style={{
-        width: "100%",
-        height: "100%",
-        objectFit: "cover",
-        filter: `brightness(${dim}) saturate(.94) blur(${blur}px)`,
-        transform: `translate(${x * p}%, ${y * p}%) scale(${1 + zoom * p})`,
-        transformOrigin: "50% 50%"
-      }}
-    />
-  </AbsoluteFill>
-);
-
-const ComponentLayer: React.FC<{
-  source: string;
-  crop: Crop;
-  p: number;
-  fromX?: number;
-  toX?: number;
-  fromY?: number;
-  toY?: number;
-  fromScale?: number;
-  toScale?: number;
+  scaleFrom?: number;
   opacity?: number;
-  brightness?: number;
+  blurFrom?: number;
   z?: number;
-}> = ({
-  source,
-  crop,
-  p,
-  fromX = 0,
-  toX = 0,
-  fromY = 0,
-  toY = 0,
-  fromScale = 1,
-  toScale = 1,
-  opacity = 0.72,
-  brightness = 1,
-  z = 2
+}>> = ({
+  progress,
+  x = 0,
+  y = 24,
+  scaleFrom = 0.985,
+  opacity = 1,
+  blurFrom = 0,
+  z = 1,
+  children
 }) => {
-  const [top, right, bottom, left] = crop;
-  const leftPx = 1920 * (left / 100);
-  const topPx = 1080 * (top / 100);
-  const widthPx = 1920 * ((100 - left - right) / 100);
-  const heightPx = 1080 * ((100 - top - bottom) / 100);
-
-  const x = interpolate(p, [0, 1], [fromX * 24, toX * 24], clamp);
-  const y = interpolate(p, [0, 1], [fromY * 24, toY * 24], clamp);
-  const scale = interpolate(p, [0, 1], [fromScale, toScale], clamp);
-
+  const tx = interpolate(progress, [0, 1], [x, 0], clamp);
+  const ty = interpolate(progress, [0, 1], [y, 0], clamp);
+  const scale = interpolate(progress, [0, 1], [scaleFrom, 1], clamp);
+  const blur = interpolate(progress, [0, 1], [blurFrom, 0], clamp);
   return (
     <div
       style={{
-        position: "absolute",
-        left: leftPx,
-        top: topPx,
-        width: widthPx,
-        height: heightPx,
-        overflow: "hidden",
-        zIndex: z,
-        opacity: opacity * p,
-        pointerEvents: "none",
-        transform: `translate3d(${x}px, ${y}px, 0) scale(${scale})`,
-        transformOrigin: "50% 50%",
-        WebkitMaskImage:
-          "radial-gradient(ellipse at center, #000 58%, rgba(0,0,0,.94) 72%, transparent 100%)",
-        maskImage:
-          "radial-gradient(ellipse at center, #000 58%, rgba(0,0,0,.94) 72%, transparent 100%)"
+        opacity: progress * opacity,
+        transform: `translate3d(${tx}px,${ty}px,0) scale(${scale})`,
+        filter: `blur(${blur}px)`,
+        zIndex: z
       }}
     >
-      <Img
-        src={staticFile(source)}
+      {children}
+    </div>
+  );
+};
+
+const Surface: React.FC<React.PropsWithChildren<{
+  width?: number;
+  height?: number;
+  padding?: number;
+  radius?: number;
+  style?: React.CSSProperties;
+}>> = ({width, height, padding = 28, radius = 28, style, children}) => (
+  <div
+    style={{
+      width,
+      height,
+      padding,
+      borderRadius: radius,
+      border: `1px solid ${BORDER}`,
+      background: PANEL,
+      boxShadow: "0 28px 80px rgba(0,0,0,.22)",
+      backdropFilter: "blur(10px)",
+      ...style
+    }}
+  >
+    {children}
+  </div>
+);
+
+const Kicker: React.FC<React.PropsWithChildren> = ({children}) => (
+  <div style={{fontSize: 19, fontWeight: 800, letterSpacing: 2.2, color: GREEN, textTransform: "uppercase"}}>
+    {children}
+  </div>
+);
+
+const Headline: React.FC<React.PropsWithChildren<{size?: number; width?: number}>> = ({
+  children,
+  size = 82,
+  width = 980
+}) => (
+  <div
+    style={{
+      marginTop: 18,
+      width,
+      color: WHITE,
+      fontSize: size,
+      lineHeight: 0.98,
+      fontWeight: 800,
+      letterSpacing: -3.4
+    }}
+  >
+    {children}
+  </div>
+);
+
+const Body: React.FC<React.PropsWithChildren<{width?: number}>> = ({children, width = 680}) => (
+  <div style={{marginTop: 22, width, color: MUTED, fontSize: 27, lineHeight: 1.4}}>
+    {children}
+  </div>
+);
+
+const Badge: React.FC<React.PropsWithChildren<{green?: boolean}>> = ({children, green}) => (
+  <span
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      padding: "8px 13px",
+      borderRadius: 999,
+      border: `1px solid ${green ? "rgba(59,181,109,.44)" : BORDER}`,
+      background: green ? "rgba(59,181,109,.12)" : "rgba(255,255,255,.06)",
+      color: green ? "#BFF0D1" : WHITE,
+      fontSize: 17,
+      fontWeight: 700
+    }}
+  >
+    {children}
+  </span>
+);
+
+const Signal: React.FC<{progress: number; y?: number; from?: number; to?: number}> = ({
+  progress,
+  y = 820,
+  from = 150,
+  to = 1770
+}) => {
+  const width = (to - from) * progress;
+  return (
+    <div style={{position: "absolute", left: from, top: y, width: to - from, height: 24}}>
+      <div style={{position: "absolute", left: 0, top: 10, width: "100%", height: 2, background: "rgba(255,255,255,.09)"}} />
+      <div
         style={{
           position: "absolute",
-          left: -leftPx,
-          top: -topPx,
-          width: 1920,
-          height: 1080,
-          objectFit: "cover",
-          filter: `brightness(${brightness}) saturate(1.01)`
+          left: 0,
+          top: 9,
+          width,
+          height: 4,
+          borderRadius: 99,
+          background: `linear-gradient(90deg,${GREEN},${CYAN})`
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: Math.max(0, width - 7),
+          top: 5,
+          width: 12,
+          height: 12,
+          borderRadius: "50%",
+          background: GREEN,
+          boxShadow: "0 0 18px rgba(59,181,109,.28)"
         }}
       />
     </div>
   );
 };
 
-const SignalReveal: React.FC<{
-  source: string;
-  p: number;
-  top?: number;
-  bottom?: number;
-  opacity?: number;
-}> = ({source, p, top = 35, bottom = 20, opacity = 1}) => {
-  const right = interpolate(p, [0, 1], [98, 0], clamp);
-  const travel = interpolate(p, [0, 1], [-1.2, 0], clamp);
-
+const GridBackdrop: React.FC = () => {
+  const frame = useCurrentFrame();
+  const drift = interpolate(frame, [0, 540], [0, 55], clamp);
   return (
-    <AbsoluteFill style={{zIndex: 4, pointerEvents: "none"}}>
-      <Img
-        src={staticFile(source)}
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          clipPath: `inset(${top}% ${right}% ${bottom}% 0%)`,
-          opacity,
-          filter: "brightness(1.08) saturate(1.03)",
-          transform: `translateX(${travel}%)`
-        }}
-      />
-    </AbsoluteFill>
-  );
-};
-
-const FocusPulse: React.FC<{x: number; y: number; p: number; size?: number}> = ({
-  x,
-  y,
-  p,
-  size = 26
-}) => {
-  const scale = interpolate(p, [0, 0.72, 1], [0.55, 1, 0.88], clamp);
-  const alpha = interpolate(p, [0, 0.25, 1], [0, 0.75, 0.1], clamp);
-  return (
-    <div
+    <AbsoluteFill
       style={{
-        position: "absolute",
-        left: x,
-        top: y,
-        width: size,
-        height: size,
-        marginLeft: -size / 2,
-        marginTop: -size / 2,
-        borderRadius: "50%",
-        border: `2px solid rgba(59,181,109,${alpha})`,
-        transform: `scale(${scale})`,
-        boxShadow: `0 0 20px rgba(59,181,109,${alpha * 0.34})`,
-        zIndex: 6
+        background:
+          "radial-gradient(circle at 82% 18%,rgba(34,211,238,.07),transparent 30%),radial-gradient(circle at 18% 82%,rgba(59,181,109,.08),transparent 28%),linear-gradient(145deg,#000E50 0%,#010543 58%,#020833 100%)",
+        overflow: "hidden"
       }}
-    />
-  );
-};
-
-const SceneHook: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame}) => {
-  const lf = local(frame, scene);
-  const enter = progress(lf, 0, 18);
-  const objects = progress(lf, 8, 32);
-  const signal = progress(lf, 10, 50, soft);
-
-  return (
-    <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.90} x={-0.45} zoom={0.028} />
-      <ComponentLayer source={scene.source} crop={[0, 46, 55, 0]} p={enter} fromY={0.12} toY={0} brightness={1.08} opacity={0.58} z={5} />
-      <ComponentLayer source={scene.source} crop={[44, 78, 2, 1]} p={objects} fromY={1.1} toY={0.1} fromScale={0.98} toScale={1.005} brightness={1.06} />
-      <ComponentLayer source={scene.source} crop={[33, 57, 0, 31]} p={progress(lf, 13, 36)} fromY={1.6} toY={0} fromScale={0.975} toScale={1.01} />
-      <ComponentLayer source={scene.source} crop={[42, 27, 0, 54]} p={progress(lf, 17, 40)} fromY={1.1} toY={-0.1} fromScale={0.98} toScale={1.012} />
-      <ComponentLayer source={scene.source} crop={[10, 0, 0, 73]} p={progress(lf, 20, 45)} fromX={1.2} toX={0} fromScale={0.985} toScale={1.015} />
-      <SignalReveal source={scene.source} p={signal} top={34} bottom={17} opacity={0.96} />
-    </AbsoluteFill>
-  );
-};
-
-const SceneAd: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame}) => {
-  const lf = local(frame, scene);
-  const card = progress(lf, 0, 20);
-  const phone = progress(lf, 15, 34);
-  const signal = progress(lf, 8, 48, soft);
-
-  return (
-    <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.90} x={-0.25} zoom={0.022} />
-      <ComponentLayer source={scene.source} crop={[16, 43, 12, 23]} p={card} fromX={-1.4} toX={0} fromScale={0.96} toScale={1.01} brightness={1.08} z={5} />
-      <ComponentLayer source={scene.source} crop={[5, 0, 8, 68]} p={phone} fromX={1.2} toX={0} fromScale={0.98} toScale={1.012} brightness={1.04} />
-      <SignalReveal source={scene.source} p={signal} top={37} bottom={25} opacity={0.94} />
-      <FocusPulse x={973} y={559} p={progress(lf, 28, 50)} size={34} />
-    </AbsoluteFill>
-  );
-};
-
-const SceneClick: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame}) => {
-  const lf = local(frame, scene);
-  const ad = progress(lf, 0, 17);
-  const bridge = progress(lf, 8, 40, soft);
-  const phone = progress(lf, 18, 43);
-
-  return (
-    <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.90} x={0.32} zoom={0.025} />
-      <ComponentLayer source={scene.source} crop={[10, 48, 13, 12]} p={ad} fromX={-0.8} toX={0.2} fromScale={0.985} toScale={1.015} brightness={1.05} />
-      <SignalReveal source={scene.source} p={bridge} top={36} bottom={22} opacity={0.98} />
-      <ComponentLayer source={scene.source} crop={[5, 2, 7, 67]} p={phone} fromX={1.4} toX={0} fromScale={0.96} toScale={1.015} brightness={1.06} z={5} />
-      <FocusPulse x={1120} y={570} p={progress(lf, 16, 38)} size={38} />
-    </AbsoluteFill>
-  );
-};
-
-const SceneConversation: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame}) => {
-  const lf = local(frame, scene);
-  const phone = progress(lf, 0, 23);
-  const message1 = progress(lf, 16, 34);
-  const message2 = progress(lf, 28, 48);
-  const signal = progress(lf, 10, 58, soft);
-
-  return (
-    <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.89} x={-0.2} zoom={0.02} />
-      <ComponentLayer source={scene.source} crop={[5, 26, 1, 31]} p={phone} fromY={1.15} toY={0} fromScale={0.975} toScale={1.012} brightness={1.05} z={5} />
-      <ComponentLayer source={scene.source} crop={[34, 35, 47, 43]} p={message1} fromX={0.4} toX={0} fromY={0.8} toY={0} brightness={1.11} z={6} />
-      <ComponentLayer source={scene.source} crop={[49, 34, 32, 41]} p={message2} fromX={0.5} toX={0} fromY={0.7} toY={0} brightness={1.12} z={6} />
-      <SignalReveal source={scene.source} p={signal} top={38} bottom={20} opacity={0.92} />
-    </AbsoluteFill>
-  );
-};
-
-const SceneContext: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame}) => {
-  const lf = local(frame, scene);
-  const phone = progress(lf, 0, 20);
-  const eventPanel = progress(lf, 14, 39);
-  const checks = progress(lf, 28, 55);
-  const signal = progress(lf, 10, 63, soft);
-
-  return (
-    <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.89} x={0.25} zoom={0.02} />
-      <ComponentLayer source={scene.source} crop={[6, 55, 2, 19]} p={phone} fromX={-0.8} toX={0} fromScale={0.98} toScale={1.01} brightness={1.04} z={4} />
-      <ComponentLayer source={scene.source} crop={[13, 9, 11, 47]} p={eventPanel} fromX={1.0} toX={0} fromScale={0.97} toScale={1.012} brightness={1.07} z={5} />
-      <ComponentLayer source={scene.source} crop={[31, 12, 24, 49]} p={checks} fromY={0.9} toY={0} brightness={1.11} z={6} />
-      <SignalReveal source={scene.source} p={signal} top={39} bottom={17} opacity={0.96} />
-    </AbsoluteFill>
-  );
-};
-
-const SceneOrder: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame}) => {
-  const lf = local(frame, scene);
-  const context = progress(lf, 0, 20);
-  const order = progress(lf, 14, 38);
-  const success = progress(lf, 27, 54);
-  const signal = progress(lf, 8, 60, soft);
-
-  return (
-    <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.90} x={-0.18} zoom={0.021} />
-      <ComponentLayer source={scene.source} crop={[12, 58, 6, 8]} p={context} fromX={-0.8} toX={0} brightness={1.02} />
-      <ComponentLayer source={scene.source} crop={[17, 7, 9, 48]} p={order} fromX={0.9} toX={0} fromScale={0.975} toScale={1.01} brightness={1.07} z={5} />
-      <ComponentLayer source={scene.source} crop={[9, 9, 54, 69]} p={success} fromScale={0.82} toScale={1.0} brightness={1.12} z={6} />
-      <SignalReveal source={scene.source} p={signal} top={37} bottom={15} opacity={0.95} />
-      <FocusPulse x={1510} y={423} p={success} size={62} />
-    </AbsoluteFill>
-  );
-};
-
-const SceneOverview: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame}) => {
-  const lf = local(frame, scene);
-  const title = progress(lf, 0, 22);
-  const journey = progress(lf, 10, 40);
-  const dashboard = progress(lf, 24, 61);
-  const signal = progress(lf, 8, 72, soft);
-
-  return (
-    <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.78} x={-0.12} zoom={0.018} blur={3.2} />
-      <ComponentLayer source={scene.source} crop={[3, 52, 62, 0]} p={title} brightness={1.08} opacity={0.56} z={5} />
-      <ComponentLayer source={scene.source} crop={[28, 28, 0, 15]} p={journey} fromY={0.9} toY={0} fromScale={0.985} toScale={1.01} brightness={1.03} z={4} />
-      <ComponentLayer source={scene.source} crop={[12, 0, 24, 56]} p={dashboard} fromX={0.45} toX={0} fromScale={0.985} toScale={1.006} brightness={1.05} z={5} />
-      <SignalReveal source={scene.source} p={signal} top={37} bottom={13} opacity={0.96} />
-    </AbsoluteFill>
-  );
-};
-
-const SceneEnd: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame}) => {
-  const lf = local(frame, scene);
-  const settle = progress(lf, 0, 26);
-  const title = progress(lf, 5, 24);
-  const signal = progress(lf, 0, 35, soft);
-
-  return (
-    <AbsoluteFill>
-      <BaseFrame source={scene.source} p={progress(lf, 0, duration(scene), soft)} dim={0.92} x={0.22} zoom={-0.012} />
-      <ComponentLayer source={scene.source} crop={[0, 46, 55, 0]} p={title} brightness={1.08} opacity={0.56} z={6} />
-      <ComponentLayer source={scene.source} crop={[31, 0, 0, 0]} p={settle} fromY={0.55} toY={0} fromScale={1.012} toScale={1.0} brightness={1.02} z={4} />
-      <SignalReveal source={scene.source} p={signal} top={34} bottom={17} opacity={0.96} />
+    >
       <div
         style={{
           position: "absolute",
-          left: "50%",
-          bottom: 46,
-          width: interpolate(settle, [0, 1], [0, 420], clamp),
-          height: 3,
-          transform: "translateX(-50%)",
-          borderRadius: 99,
-          background: GREEN,
-          opacity: 0.7,
-          zIndex: 7
+          inset: 0,
+          opacity: 0.10,
+          transform: `translateX(${drift}px)`,
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px)",
+          backgroundSize: "72px 72px"
         }}
       />
     </AbsoluteFill>
   );
 };
 
-const SceneContent: React.FC<{scene: SceneSpec; frame: number}> = ({scene, frame}) => {
-  switch (scene.id) {
-    case "hook":
-      return <SceneHook scene={scene} frame={frame} />;
-    case "anuncio":
-      return <SceneAd scene={scene} frame={frame} />;
-    case "clique-whatsapp":
-      return <SceneClick scene={scene} frame={frame} />;
-    case "conversa":
-      return <SceneConversation scene={scene} frame={frame} />;
-    case "contexto-evento":
-      return <SceneContext scene={scene} frame={frame} />;
-    case "pedido-confirmado":
-      return <SceneOrder scene={scene} frame={frame} />;
-    case "visao-consolidada":
-      return <SceneOverview scene={scene} frame={frame} />;
-    default:
-      return <SceneEnd scene={scene} frame={frame} />;
-  }
+const CampaignPanel: React.FC<{f: number}> = ({f}) => {
+  const title = p(f, 4, 18);
+  const row1 = p(f, 10, 26);
+  const row2 = p(f, 16, 32);
+  const action = p(f, 22, 42);
+  return (
+    <Surface width={920} height={510}>
+      <Layer progress={title} y={16}>
+        <div style={{fontSize: 22, color: MUTED}}>Campanhas</div>
+        <div style={{fontSize: 34, marginTop: 6, fontWeight: 800, color: WHITE}}>Google Ads e Meta Ads</div>
+      </Layer>
+      <div style={{marginTop: 34, display: "grid", gap: 16}}>
+        <Layer progress={row1} x={-18} y={0}>
+          <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", padding: 20, borderRadius: 18, background: "rgba(255,255,255,.055)", border: `1px solid ${BORDER}`}}>
+            <div>
+              <div style={{fontSize: 20, fontWeight: 800, color: WHITE}}>Google Ads</div>
+              <div style={{marginTop: 6, fontSize: 16, color: MUTED}}>Origem rastreável</div>
+            </div>
+            <Badge green>Ativo</Badge>
+          </div>
+        </Layer>
+        <Layer progress={row2} x={-18} y={0}>
+          <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", padding: 20, borderRadius: 18, background: "rgba(255,255,255,.055)", border: `1px solid ${BORDER}`}}>
+            <div>
+              <div style={{fontSize: 20, fontWeight: 800, color: WHITE}}>Meta Ads</div>
+              <div style={{marginTop: 6, fontSize: 16, color: MUTED}}>Origem rastreável</div>
+            </div>
+            <Badge green>Ativo</Badge>
+          </div>
+        </Layer>
+      </div>
+      <Layer progress={action} y={10}>
+        <div style={{marginTop: 24, display: "flex", alignItems: "center", gap: 12, color: MUTED, fontSize: 17}}>
+          <span style={{width: 10, height: 10, borderRadius: "50%", background: GREEN}} />
+          clique conectado à conversa
+        </div>
+      </Layer>
+    </Surface>
+  );
 };
+
+const MessageBubble: React.FC<{side: "left" | "right"; progress: number; label: string}> = ({
+  side,
+  progress,
+  label
+}) => (
+  <Layer progress={progress} x={side === "left" ? -22 : 22} y={8}>
+    <div
+      style={{
+        width: 360,
+        marginLeft: side === "right" ? 240 : 0,
+        padding: "15px 18px",
+        borderRadius: side === "left" ? "18px 18px 18px 5px" : "18px 18px 5px 18px",
+        background: side === "right" ? "rgba(59,181,109,.18)" : "rgba(255,255,255,.075)",
+        border: `1px solid ${side === "right" ? "rgba(59,181,109,.30)" : BORDER}`,
+        color: WHITE,
+        fontSize: 17
+      }}
+    >
+      {label}
+    </div>
+  </Layer>
+);
+
+const MessagesPanel: React.FC<{f: number}> = ({f}) => (
+  <Surface width={720} height={570}>
+    <Layer progress={p(f, 0, 16)} y={14}>
+      <div style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+        <div>
+          <div style={{fontSize: 31, fontWeight: 800, color: WHITE}}>Mensagens</div>
+          <div style={{marginTop: 6, color: MUTED, fontSize: 16}}>Origem contatos iniciados rastreados</div>
+        </div>
+        <Badge green>WhatsApp</Badge>
+      </div>
+    </Layer>
+    <div style={{marginTop: 36, display: "grid", gap: 17}}>
+      <MessageBubble side="left" progress={p(f, 10, 26)} label="Mensagem recebida" />
+      <MessageBubble side="right" progress={p(f, 22, 38)} label="Resposta enviada" />
+      <MessageBubble side="left" progress={p(f, 34, 52)} label="Conversa em andamento" />
+    </div>
+  </Surface>
+);
+
+const ContactContextPanel: React.FC<{f: number}> = ({f}) => {
+  const rows = [
+    ["Origem", "Google Ads"],
+    ["Canal", "WhatsApp"],
+    ["Etapa", "Qualificado"],
+    ["Campanha", "Origem rastreada"]
+  ];
+  return (
+    <Surface width={780} height={510}>
+      <Layer progress={p(f, 0, 16)} y={12}>
+        <div style={{fontSize: 30, fontWeight: 800, color: WHITE}}>Contexto do contato</div>
+      </Layer>
+      <div style={{marginTop: 30, display: "grid", gap: 13}}>
+        {rows.map(([label, value], i) => (
+          <Layer key={label} progress={p(f, 10 + i * 8, 28 + i * 8)} x={18} y={0}>
+            <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 18px", borderRadius: 16, background: "rgba(255,255,255,.05)", border: `1px solid ${BORDER}`}}>
+              <span style={{color: MUTED, fontSize: 16}}>{label}</span>
+              <span style={{color: WHITE, fontWeight: 800, fontSize: 17}}>{value}</span>
+            </div>
+          </Layer>
+        ))}
+      </div>
+    </Surface>
+  );
+};
+
+const SalePanel: React.FC<{f: number}> = ({f}) => {
+  const ring = p(f, 14, 36);
+  return (
+    <Surface width={760} height={480} style={{display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center"}}>
+      <Layer progress={ring} y={0} scaleFrom={0.72}>
+        <div
+          style={{
+            width: 118,
+            height: 118,
+            borderRadius: "50%",
+            background: "rgba(59,181,109,.14)",
+            border: "1px solid rgba(59,181,109,.42)",
+            display: "grid",
+            placeItems: "center",
+            margin: "0 auto",
+            color: GREEN,
+            fontSize: 64,
+            fontWeight: 900
+          }}
+        >
+          ✓
+        </div>
+      </Layer>
+      <Layer progress={p(f, 22, 42)} y={18}>
+        <div style={{marginTop: 25, fontSize: 37, fontWeight: 800, color: WHITE}}>Vendas Realizadas</div>
+      </Layer>
+      <Layer progress={p(f, 30, 50)} y={16}>
+        <div style={{marginTop: 12, color: MUTED, fontSize: 20}}>Conversão conectada ao contato e à origem</div>
+      </Layer>
+    </Surface>
+  );
+};
+
+const MiniChart: React.FC<{progress: number}> = ({progress}) => {
+  const draw = interpolate(progress, [0, 1], [100, 0], clamp);
+  return (
+    <svg width="420" height="170" viewBox="0 0 420 170">
+      <path d="M20 130 C80 120 95 86 150 96 C205 106 235 52 292 63 C335 70 356 34 400 30" fill="none" stroke="rgba(255,255,255,.13)" strokeWidth="2" />
+      <path
+        d="M20 130 C80 120 95 86 150 96 C205 106 235 52 292 63 C335 70 356 34 400 30"
+        fill="none"
+        stroke={GREEN}
+        strokeWidth="4"
+        strokeLinecap="round"
+        pathLength="100"
+        strokeDasharray="100"
+        strokeDashoffset={draw}
+      />
+    </svg>
+  );
+};
+
+const DashboardPanel: React.FC<{f: number}> = ({f}) => (
+  <Surface width={1260} height={660} padding={24}>
+    <Layer progress={p(f, 0, 14)} y={12}>
+      <div style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+        <div style={{fontSize: 31, fontWeight: 800, color: WHITE}}>Dashboard</div>
+        <Badge green>Visão consolidada</Badge>
+      </div>
+    </Layer>
+    <div style={{marginTop: 28, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18}}>
+      <Layer progress={p(f, 9, 28)} x={-22} y={0}>
+        <Surface height={235} padding={20} radius={20} style={{boxShadow: "none"}}>
+          <div style={{fontSize: 20, fontWeight: 800, color: WHITE}}>Últimas Vendas</div>
+          <div style={{marginTop: 15, display: "grid", gap: 10}}>
+            {["Google Ads", "Meta Ads", "Organic"].map((x) => (
+              <div key={x} style={{display: "flex", justifyContent: "space-between", padding: "11px 12px", borderRadius: 12, background: "rgba(255,255,255,.045)"}}>
+                <span style={{color: MUTED}}>{x}</span><span style={{color: GREEN}}>•</span>
+              </div>
+            ))}
+          </div>
+        </Surface>
+      </Layer>
+      <Layer progress={p(f, 15, 34)} x={22} y={0}>
+        <Surface height={235} padding={20} radius={20} style={{boxShadow: "none"}}>
+          <div style={{fontSize: 20, fontWeight: 800, color: WHITE}}>Novos Contatos</div>
+          <div style={{marginTop: 15, display: "grid", gap: 10}}>
+            {["Qualificado", "Contato Iniciado", "Negociação"].map((x) => (
+              <div key={x} style={{display: "flex", justifyContent: "space-between", padding: "11px 12px", borderRadius: 12, background: "rgba(255,255,255,.045)"}}>
+                <span style={{color: MUTED}}>{x}</span><span style={{color: CYAN}}>•</span>
+              </div>
+            ))}
+          </div>
+        </Surface>
+      </Layer>
+    </div>
+    <Layer progress={p(f, 24, 58)} y={20}>
+      <Surface height={285} padding={20} radius={20} style={{marginTop: 18, boxShadow: "none", display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+        <div>
+          <div style={{fontSize: 20, fontWeight: 800, color: WHITE}}>Desempenho por Origem</div>
+          <div style={{marginTop: 6, fontSize: 15, color: MUTED}}>Análise por origem de tráfego</div>
+          <div style={{marginTop: 22, display: "flex", gap: 10}}>
+            <Badge>Origem</Badge><Badge>Contatos</Badge><Badge>Vendas</Badge>
+          </div>
+        </div>
+        <MiniChart progress={p(f, 29, 66, soft)} />
+      </Surface>
+    </Layer>
+  </Surface>
+);
+
+const Scene1: React.FC<{f: number}> = ({f}) => (
+  <AbsoluteFill>
+    <div style={{position: "absolute", left: 128, top: 154}}>
+      <Layer progress={p(f, 0, 16)} y={18}><Kicker>Signal Convergence</Kicker></Layer>
+      <Layer progress={p(f, 5, 26)} y={30} scaleFrom={0.99}><Headline>Do clique à venda.</Headline></Layer>
+      <Layer progress={p(f, 14, 34)} y={22}><Body>Uma única jornada conectando mídia, conversa, contexto e resultado.</Body></Layer>
+    </div>
+    <Signal progress={p(f, 10, 54, soft)} />
+  </AbsoluteFill>
+);
+
+const Scene2: React.FC<{f: number}> = ({f}) => (
+  <AbsoluteFill>
+    <div style={{position: "absolute", left: 112, top: 130}}>
+      <Layer progress={p(f, 0, 16)}><Kicker>Origem</Kicker></Layer>
+      <Layer progress={p(f, 5, 22)}><Headline size={62} width={650}>O sinal começa na campanha.</Headline></Layer>
+    </div>
+    <div style={{position: "absolute", right: 110, top: 220}}>
+      <Layer progress={p(f, 8, 30)} x={34} y={8}><CampaignPanel f={f} /></Layer>
+    </div>
+    <Signal progress={p(f, 0, 54, soft)} y={900} />
+  </AbsoluteFill>
+);
+
+const Scene3: React.FC<{f: number}> = ({f}) => (
+  <AbsoluteFill>
+    <div style={{position: "absolute", left: 90, top: 190, transform: "scale(.78)", transformOrigin: "top left"}}>
+      <Layer progress={p(f, 0, 16)} x={-20} y={0}><CampaignPanel f={40} /></Layer>
+    </div>
+    <div style={{position: "absolute", right: 115, top: 165, transform: "scale(.78)", transformOrigin: "top right"}}>
+      <Layer progress={p(f, 18, 42)} x={42} y={0}><MessagesPanel f={Math.max(0, f - 14)} /></Layer>
+    </div>
+    <Signal progress={p(f, 2, 50, soft)} y={550} from={610} to={1340} />
+  </AbsoluteFill>
+);
+
+const Scene4: React.FC<{f: number}> = ({f}) => (
+  <AbsoluteFill>
+    <div style={{position: "absolute", left: 128, top: 150}}>
+      <Layer progress={p(f, 0, 16)}><Kicker>Conversa</Kicker></Layer>
+      <Layer progress={p(f, 5, 22)}><Headline size={60} width={670}>A origem continua dentro do atendimento.</Headline></Layer>
+    </div>
+    <div style={{position: "absolute", right: 120, top: 220}}>
+      <MessagesPanel f={f} />
+    </div>
+    <Signal progress={p(f, 5, 68, soft)} y={900} />
+  </AbsoluteFill>
+);
+
+const Scene5: React.FC<{f: number}> = ({f}) => (
+  <AbsoluteFill>
+    <div style={{position: "absolute", left: 115, top: 140}}>
+      <Layer progress={p(f, 0, 16)}><Kicker>Contexto + evento</Kicker></Layer>
+      <Layer progress={p(f, 5, 24)}><Headline size={60} width={720}>A conversa vira contexto rastreável.</Headline></Layer>
+    </div>
+    <div style={{position: "absolute", right: 115, top: 235}}>
+      <ContactContextPanel f={f} />
+    </div>
+    <Signal progress={p(f, 6, 70, soft)} y={895} />
+  </AbsoluteFill>
+);
+
+const Scene6: React.FC<{f: number}> = ({f}) => (
+  <AbsoluteFill>
+    <div style={{position: "absolute", left: 120, top: 160}}>
+      <Layer progress={p(f, 0, 16)}><Kicker>Conversão</Kicker></Layer>
+      <Layer progress={p(f, 5, 24)}><Headline size={62} width={660}>O resultado fecha a trajetória.</Headline></Layer>
+      <Layer progress={p(f, 14, 34)}><Body width={610}>A venda passa a pertencer ao mesmo percurso que começou no anúncio.</Body></Layer>
+    </div>
+    <div style={{position: "absolute", right: 120, top: 245}}>
+      <SalePanel f={f} />
+    </div>
+    <Signal progress={p(f, 4, 68, soft)} y={900} />
+  </AbsoluteFill>
+);
+
+const Scene7: React.FC<{f: number}> = ({f}) => (
+  <AbsoluteFill>
+    <div style={{position: "absolute", left: 120, top: 85}}>
+      <Layer progress={p(f, 0, 14)}><Kicker>Inteligência consolidada</Kicker></Layer>
+    </div>
+    <div style={{position: "absolute", left: 330, top: 185}}>
+      <Layer progress={p(f, 5, 28)} y={24} scaleFrom={0.975}><DashboardPanel f={f} /></Layer>
+    </div>
+    <Signal progress={p(f, 6, 82, soft)} y={940} />
+  </AbsoluteFill>
+);
+
+const Scene8: React.FC<{f: number}> = ({f}) => (
+  <AbsoluteFill style={{display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center"}}>
+    <div>
+      <Layer progress={p(f, 0, 18)} y={18}>
+        <Img src={staticFile("adsmagic-do-clique-a-venda/logo-wordmark-white.svg")} style={{width: 300}} />
+      </Layer>
+      <Layer progress={p(f, 6, 26)} y={24}>
+        <div style={{marginTop: 38, color: WHITE, fontSize: 78, fontWeight: 800, letterSpacing: -3.2}}>Do clique à venda.</div>
+      </Layer>
+      <Layer progress={p(f, 14, 34)} y={18}>
+        <div style={{marginTop: 22, color: MUTED, fontSize: 27}}>Contexto para decidir melhor onde investir.</div>
+      </Layer>
+      <div style={{position: "relative", width: 620, height: 4, margin: "52px auto 0", background: "rgba(255,255,255,.10)", borderRadius: 99, overflow: "hidden"}}>
+        <div style={{width: `${p(f, 4, 38, soft) * 100}%`, height: "100%", background: `linear-gradient(90deg,${GREEN},${CYAN})`}} />
+      </div>
+    </div>
+  </AbsoluteFill>
+);
 
 export const AdsmagicClickToSale: React.FC = () => {
   const frame = useCurrentFrame();
 
+  const scenes = [
+    {start: 0, end: 60, render: (f: number) => <Scene1 f={f} />},
+    {start: 60, end: 120, render: (f: number) => <Scene2 f={f} />},
+    {start: 120, end: 180, render: (f: number) => <Scene3 f={f} />},
+    {start: 180, end: 255, render: (f: number) => <Scene4 f={f} />},
+    {start: 255, end: 330, render: (f: number) => <Scene5 f={f} />},
+    {start: 330, end: 405, render: (f: number) => <Scene6 f={f} />},
+    {start: 405, end: 495, render: (f: number) => <Scene7 f={f} />},
+    {start: 495, end: 540, render: (f: number) => <Scene8 f={f} />}
+  ];
+
   return (
-    <AbsoluteFill style={{backgroundColor: NAVY, overflow: "hidden"}}>
-      {scenes.map((scene, index) => {
-        const opacity = sceneOpacity(scene, frame, index);
+    <AbsoluteFill style={{backgroundColor: NAVY, fontFamily: "Inter, Arial, sans-serif", overflow: "hidden"}}>
+      <GridBackdrop />
+      {scenes.map((scene, i) => {
+        const fade = 6;
+        const inOpacity = i === 0 ? 1 : p(frame, scene.start - fade, scene.start + fade, soft);
+        const outOpacity = i === scenes.length - 1 ? 1 : interpolate(frame, [scene.end - fade, scene.end + fade], [1, 0], clamp);
+        const opacity = Math.min(inOpacity, outOpacity);
         if (opacity <= 0) return null;
         return (
-          <AbsoluteFill key={scene.id} style={{opacity}}>
-            <SceneContent scene={scene} frame={frame} />
+          <AbsoluteFill key={scene.start} style={{opacity}}>
+            {scene.render(sceneLocal(frame, scene.start))}
           </AbsoluteFill>
         );
       })}
-      <AbsoluteFill
-        style={{
-          pointerEvents: "none",
-          background:
-            "radial-gradient(circle at 50% 44%, transparent 52%, rgba(0,2,32,.19) 100%)"
-        }}
-      />
+      <AbsoluteFill style={{pointerEvents: "none", background: "radial-gradient(circle at 50% 46%,transparent 54%,rgba(0,2,32,.20) 100%)"}} />
     </AbsoluteFill>
   );
 };
