@@ -9,7 +9,8 @@
     "render:demo": "remotion render src/index.ts MotionAgentDemo out/motion-agent-demo.mp4",
     "render:job": "remotion render src/index.ts MotionJobPreview out/motion-job-preview.mp4 --props=jobs/example-job.json",
     "render:scene": "remotion render src/index.ts MotionScene out/motion-scene.mp4 --props=jobs/scene-job.json",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "render:adsmagic": "remotion render src/index.ts AdsmagicClickToSale out/adsmagic-do-clique-a-venda.mp4"
   },
   "dependencies": {
     "@motion-agent/runtime": "workspace:*",
