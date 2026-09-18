@@ -55,7 +55,7 @@ try {
 
   const manifest = JSON.parse(await readFile(join(target, ".motion", "install-manifest.json"), "utf8"));
   if (manifest.installerVersion !== "0.6.0") throw new Error(`Unexpected installer version ${manifest.installerVersion}`);
-  if (manifest.pipelineVersion !== "layered-motion-templates-v1") throw new Error(`Unexpected pipeline version ${manifest.pipelineVersion}`);
+  if (manifest.pipelineVersion !== "aiox-motion-squad-v1") throw new Error(`Unexpected pipeline version ${manifest.pipelineVersion}`);
 
   const orchestratorSkill = await readFile(join(target, ".agents", "skills", "motion-orchestrator", "SKILL.md"), "utf8");
   const templateResolverSkill = await readFile(join(target, ".agents", "skills", "template-resolver", "SKILL.md"), "utf8");
