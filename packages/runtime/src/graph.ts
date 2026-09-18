@@ -1,5 +1,6 @@
 import type { JobContext } from "./contracts.js";
 import type { AgentName } from "./agents.js";
+import {requiresLayerability} from "./qa.js";
 
 export type GraphNode = {
   id: string;
@@ -32,13 +33,14 @@ export function planExecutionGraph(context: JobContext): ExecutionGraph {
 
   nodes.push(node("director", "director", "DISCOVERY"));
   nodes.push(node("asset_inspector", "asset_inspector", "DISCOVERY", ["director"]));
+  nodes.push(node("decomposition_agent", "decomposition_agent", "DISCOVERY", ["asset_inspector"]));
 
   const needsSource = context.decomposition?.elements.some(
     (element) => element.strategy === "REQUEST_SOURCE" || element.requires_original_source
   );
   if (needsSource) {
     nodes.push(
-      node("source_asset_agent", "source_asset_agent", "DISCOVERY", ["asset_inspector"])
+      node("source_asset_agent", "source_asset_agent", "DISCOVERY", ["decomposition_agent"])
     );
   }
 
@@ -57,7 +59,7 @@ export function planExecutionGraph(context: JobContext): ExecutionGraph {
     ? "creative_reference_agent"
     : needsSource
       ? "source_asset_agent"
-      : "asset_inspector";
+      : "decomposition_agent";
 
   nodes.push(node("motion_director", "motion_director", "DISCOVERY", [directionDependency]));
   nodes.push(node("motion_spec_agent", "motion_spec_agent", "DISCOVERY", ["motion_director"]));
@@ -100,6 +102,7 @@ export function planExecutionGraph(context: JobContext): ExecutionGraph {
 
   const qaAgents: AgentName[] = [
     "fidelity_critic",
+    ...(requiresLayerability(context) ? ["layerability_critic" as AgentName] : []),
     "motion_critic",
     "composition_critic",
     "technical_validator"
