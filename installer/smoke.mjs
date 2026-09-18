@@ -85,7 +85,25 @@ try {
   const doctor = JSON.parse(run(["doctor", "--target", target, "--json"]));
   if (!doctor.ok) throw new Error("doctor reported a broken installation");
 
+  const configPath = join(target, ".motion", "config.json");
+  const preUpdateConfig = JSON.parse(await readFile(configPath, "utf8"));
+  delete preUpdateConfig.templateResolution;
+  preUpdateConfig.userOwnedSetting = "preserve-me";
+  await writeFile(configPath, `${JSON.stringify(preUpdateConfig, null, 2)}\n`);
+
   run(["update", "--target", target, "--skip-install", "--skip-remotion-skills"]);
+
+  const postUpdateConfig = JSON.parse(await readFile(configPath, "utf8"));
+  if (postUpdateConfig.userOwnedSetting !== "preserve-me") {
+    throw new Error("update did not preserve existing user config");
+  }
+  if (
+    postUpdateConfig.templateResolution?.enabled !== true ||
+    postUpdateConfig.templateResolution?.registry !== ".motion/template-recipes.json"
+  ) {
+    throw new Error("update did not merge Template Resolution defaults into existing config");
+  }
+
   run(["uninstall", "--target", target]);
 
   if (await exists(join(target, ".motion"))) throw new Error(".motion still exists after uninstall");
