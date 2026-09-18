@@ -49,7 +49,7 @@ try {
   }
 
   const manifest = JSON.parse(await readFile(join(target, ".motion", "install-manifest.json"), "utf8"));
-  if (manifest.installerVersion !== "0.6.0") throw new Error(`Unexpected installer version ${manifest.installerVersion}`);
+  if (manifest.installerVersion !== packageJson.version) throw new Error(`Unexpected installer version ${manifest.installerVersion}; expected ${packageJson.version}`);
 
   run("pnpm", ["dlx", tarball, "doctor", "--target", target, "--json"], repoRoot);
   run("pnpm", ["dlx", tarball, "uninstall", "--target", target], repoRoot);
