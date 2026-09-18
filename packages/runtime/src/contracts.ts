@@ -7,6 +7,7 @@ export const JobStateSchema = z.enum([
   "SCENE_TOPOLOGY_AUDIT",
   "SOURCE_RESOLUTION",
   "LAYERABILITY_GATE",
+  "TEMPLATE_RESOLUTION",
   "DIRECTION_DISCOVERY",
   "DIRECTION_READY",
   "MOTION_SPEC_READY",
@@ -168,6 +169,22 @@ export const DecompositionSchema = z.object({
 });
 export type Decomposition = z.infer<typeof DecompositionSchema>;
 
+export const TemplateSelectionSchema = z.object({
+  template_id: z.string().min(1),
+  name: z.string().min(1),
+  official_page: z.string().url(),
+  create_command: z.string().min(1),
+  role: z.string().min(1),
+  selection_mode: z.enum(["BASELINE", "SPECIALIZED_REFERENCE"]),
+  reason: z.string().min(1),
+  adaptation_plan: z.string().min(1),
+  scaffold_required: z.boolean().default(false),
+  preserves_host_project: z.boolean().default(true),
+  layerability_gate_unchanged: z.boolean().default(true),
+  catalog_source: z.literal("https://www.remotion.dev/templates")
+});
+export type TemplateSelection = z.infer<typeof TemplateSelectionSchema>;
+
 export const MotionDirectionSchema = z.object({
   job_id: z.string().min(1),
   scene_id: z.string().min(1),
@@ -273,6 +290,7 @@ export const JobContextSchema = z.object({
   brief: VideoBriefSchema,
   assets: AssetManifestSchema.optional(),
   decomposition: DecompositionSchema.optional(),
+  template_selection: TemplateSelectionSchema.optional(),
   motion_direction: MotionDirectionSchema.optional(),
   motion_spec: MotionSpecSchema.optional(),
   build_result: BuildResultSchema.optional(),
