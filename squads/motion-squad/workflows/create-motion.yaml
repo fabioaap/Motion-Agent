@@ -1,63 +1,78 @@
 workflow:
   id: create-motion
   name: Asset-first layered motion production
-  entry_task: intake-motion-request.md
+  description: Task-first workflow that blocks slide-like flattened animation and requests missing independent assets before build.
+  type: sequential
 
   sequence:
     - step: intake
       task: intake-motion-request.md
       agent: motion-director
+      action: Understand the requested scene and identify candidate moving elements.
 
     - step: topology
       task: audit-scene-topology.md
       agent: asset-intake-specialist
+      action: Inventory sources and classify every required moving layer.
 
     - step: missing-assets
       task: request-missing-assets.md
       agent: asset-intake-specialist
       condition: layerability_status == BLOCKED_MISSING_ASSETS
-      stop_on_success: true
+      action: Tell the user exactly which critical assets are missing and hard-stop.
       terminal_status: WAITING_FOR_ASSETS
 
     - step: flat-authorization
       task: request-missing-assets.md
       agent: layerability-guard
       condition: layerability_status == FLAT_MOTION_ONLY AND explicit_flat_motion_authorization != true
-      stop_on_success: true
+      action: Request explicit authorization before any flat-motion animatic.
       terminal_status: WAITING_FOR_USER_DECISION
 
     - step: strategy
       task: resolve-motion-strategy.md
       agent: motion-director
       condition: layerability_status != BLOCKED_MISSING_ASSETS
+      action: Define layer-specific motion direction and implementation technique.
 
     - step: template
       task: resolve-template.md
       agent: template-resolver
+      action: Resolve the smallest official Remotion technical baseline.
 
     - step: build
       task: build-motion-scene.md
       agent: remotion-builder
       condition: build_mode == LAYERED_MOTION OR build_mode == FLAT_MOTION_ALLOWED
-
-    - step: reconstruction
-      task: build-motion-scene.md
-      agent: remotion-builder
-      condition: build_mode == RECONSTRUCTION_FIRST
+      action: Build an isolated Remotion scene using the approved Layer Map.
 
     - step: fidelity-review
       task: review-motion-scene.md
       agent: fidelity-critic
+      action: Validate recomposition fidelity against approved sources.
 
     - step: motion-review
       task: review-motion-scene.md
       agent: motion-qa
+      action: Run Layer Separation, motion, composition, brand and technical QA.
 
     - step: human-gate
-      checklist: ready-for-human-checklist.md
+      agent: layerability-guard
+      action: Validate ready-for-human-checklist.md and expose READY_FOR_HUMAN only on pass.
+      validates: ready-for-human-checklist.md
       terminal_status: READY_FOR_HUMAN
 
     - step: final-render
       task: render-final-motion.md
       agent: remotion-builder
       condition: human_approval == true
+      action: Render the human-approved final composition.
+
+  handoff_prompts:
+    motion-director_to_asset-intake-specialist: Pass sceneSummary, assumedElements, references and known project assets.
+    asset-intake-specialist_to_motion-director: Pass layerMap, layerabilityStatus, reconstructableElements and missingAssets.
+    motion-director_to_template-resolver: Pass motionStrategy and techniqueRequired only after layerability is resolved.
+    template-resolver_to_remotion-builder: Pass selectedTemplate as a technical reference without changing visual direction.
+    remotion-builder_to_fidelity-critic: Pass preview, buildNotes, layerMap and approved reference.
+    fidelity-critic_to_motion-qa: Pass fidelity findings and the same structural Layer Map.
+    motion-qa_to_layerability-guard: Pass mandatory critic outcomes for READY_FOR_HUMAN gating.
