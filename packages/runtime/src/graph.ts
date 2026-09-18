@@ -44,22 +44,30 @@ export function planExecutionGraph(context: JobContext): ExecutionGraph {
     );
   }
 
+  const templateDependency = needsSource ? "source_asset_agent" : "decomposition_agent";
+  nodes.push(
+    node(
+      "template_resolver",
+      "template_resolver",
+      "DISCOVERY",
+      [templateDependency]
+    )
+  );
+
   if (context.brief.user_direction_level === "LOW") {
     nodes.push(
       node(
         "creative_reference_agent",
         "creative_reference_agent",
         "DISCOVERY",
-        [needsSource ? "source_asset_agent" : "decomposition_agent"]
+        ["template_resolver"]
       )
     );
   }
 
   const directionDependency = context.brief.user_direction_level === "LOW"
     ? "creative_reference_agent"
-    : needsSource
-      ? "source_asset_agent"
-      : "decomposition_agent";
+    : "template_resolver";
 
   nodes.push(node("motion_director", "motion_director", "DISCOVERY", [directionDependency]));
   nodes.push(node("motion_spec_agent", "motion_spec_agent", "DISCOVERY", ["motion_director"]));
