@@ -178,6 +178,38 @@ const Signal: React.FC<{progress: number; y?: number; from?: number; to?: number
   );
 };
 
+const CinematicPlate: React.FC<{source: string; f: number; duration?: number; dim?: number; blur?: number}> = ({
+  source,
+  f,
+  duration = 60,
+  dim = 0.62,
+  blur = 2.2
+}) => {
+  const drift = interpolate(f, [0, duration], [-0.7, 0.7], clamp);
+  const zoom = interpolate(f, [0, duration], [1.035, 1.075], clamp);
+  return (
+    <AbsoluteFill style={{overflow: "hidden"}}>
+      <Img
+        src={staticFile(source)}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          filter: `brightness(${dim}) saturate(.92) blur(${blur}px)`,
+          transform: `translate3d(${drift}%,0,0) scale(${zoom})`,
+          transformOrigin: "50% 50%"
+        }}
+      />
+      <AbsoluteFill
+        style={{
+          background:
+            "linear-gradient(90deg,rgba(1,5,67,.72) 0%,rgba(1,5,67,.28) 42%,rgba(1,5,67,.18) 100%),linear-gradient(180deg,rgba(1,5,67,.10),rgba(1,5,67,.34))"
+        }}
+      />
+    </AbsoluteFill>
+  );
+};
+
 const GridBackdrop: React.FC = () => {
   const frame = useCurrentFrame();
   const drift = interpolate(frame, [0, 540], [0, 55], clamp);
@@ -421,22 +453,24 @@ const DashboardPanel: React.FC<{f: number}> = ({f}) => (
 
 const Scene1: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
+    <CinematicPlate source="adsmagic-do-clique-a-venda/hook.webp" f={f} duration={60} dim={0.68} blur={1.5} />
     <div style={{position: "absolute", left: 128, top: 154}}>
-      <Layer progress={p(f, 0, 16)} y={18}><Kicker>Signal Convergence</Kicker></Layer>
-      <Layer progress={p(f, 5, 26)} y={30} scaleFrom={0.99}><Headline>Do clique à venda.</Headline></Layer>
-      <Layer progress={p(f, 14, 34)} y={22}><Body>Uma única jornada conectando mídia, conversa, contexto e resultado.</Body></Layer>
+      <Layer progress={p(f, -10, 10)} y={12}><Kicker>Signal Convergence</Kicker></Layer>
+      <Layer progress={p(f, -6, 18)} y={22} scaleFrom={0.992}><Headline>Do clique <span style={{color: GREEN}}>à venda.</span></Headline></Layer>
+      <Layer progress={p(f, 6, 28)} y={18}><Body>Uma única jornada conectando mídia, conversa, contexto e resultado.</Body></Layer>
     </div>
-    <Signal progress={p(f, 10, 54, soft)} />
+    <Signal progress={p(f, -6, 48, soft)} />
   </AbsoluteFill>
 );
 
 const Scene2: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
+    <CinematicPlate source="adsmagic-do-clique-a-venda/ad.webp" f={f} duration={60} dim={0.56} blur={2.4} />
     <div style={{position: "absolute", left: 112, top: 130}}>
       <Layer progress={p(f, 0, 16)}><Kicker>Origem</Kicker></Layer>
-      <Layer progress={p(f, 5, 22)}><Headline size={62} width={650}>O sinal começa na campanha.</Headline></Layer>
+      <Layer progress={p(f, 5, 22)}><Headline size={48} width={530}>O sinal começa na campanha.</Headline></Layer>
     </div>
-    <div style={{position: "absolute", right: 110, top: 220}}>
+    <div style={{position: "absolute", right: 95, top: 218, perspective: 1400, transform: "rotateY(-4deg) rotateX(1deg)"}}>
       <Layer progress={p(f, 8, 30)} x={34} y={8}><CampaignPanel f={f} /></Layer>
     </div>
     <Signal progress={p(f, 0, 54, soft)} y={900} />
@@ -445,6 +479,7 @@ const Scene2: React.FC<{f: number}> = ({f}) => (
 
 const Scene3: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
+    <CinematicPlate source="adsmagic-do-clique-a-venda/click.webp" f={f} duration={60} dim={0.58} blur={2.2} />
     <div style={{position: "absolute", left: 90, top: 190, transform: "scale(.78)", transformOrigin: "top left"}}>
       <Layer progress={p(f, 0, 16)} x={-20} y={0}><CampaignPanel f={40} /></Layer>
     </div>
@@ -457,11 +492,12 @@ const Scene3: React.FC<{f: number}> = ({f}) => (
 
 const Scene4: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
+    <CinematicPlate source="adsmagic-do-clique-a-venda/conversation.webp" f={f} duration={75} dim={0.57} blur={2.3} />
     <div style={{position: "absolute", left: 128, top: 150}}>
       <Layer progress={p(f, 0, 16)}><Kicker>Conversa</Kicker></Layer>
-      <Layer progress={p(f, 5, 22)}><Headline size={60} width={670}>A origem continua dentro do atendimento.</Headline></Layer>
+      <Layer progress={p(f, 5, 22)}><Headline size={46} width={560}>A origem continua dentro do atendimento.</Headline></Layer>
     </div>
-    <div style={{position: "absolute", right: 120, top: 220}}>
+    <div style={{position: "absolute", right: 110, top: 220, perspective: 1400, transform: "rotateY(-3deg)"}}>
       <MessagesPanel f={f} />
     </div>
     <Signal progress={p(f, 5, 68, soft)} y={900} />
@@ -470,11 +506,12 @@ const Scene4: React.FC<{f: number}> = ({f}) => (
 
 const Scene5: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
+    <CinematicPlate source="adsmagic-do-clique-a-venda/context.webp" f={f} duration={75} dim={0.57} blur={2.1} />
     <div style={{position: "absolute", left: 115, top: 140}}>
       <Layer progress={p(f, 0, 16)}><Kicker>Contexto + evento</Kicker></Layer>
-      <Layer progress={p(f, 5, 24)}><Headline size={60} width={720}>A conversa vira contexto rastreável.</Headline></Layer>
+      <Layer progress={p(f, 5, 24)}><Headline size={46} width={600}>A conversa vira contexto rastreável.</Headline></Layer>
     </div>
-    <div style={{position: "absolute", right: 115, top: 235}}>
+    <div style={{position: "absolute", right: 105, top: 235, perspective: 1400, transform: "rotateY(-3deg)"}}>
       <ContactContextPanel f={f} />
     </div>
     <Signal progress={p(f, 6, 70, soft)} y={895} />
@@ -483,12 +520,13 @@ const Scene5: React.FC<{f: number}> = ({f}) => (
 
 const Scene6: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
+    <CinematicPlate source="adsmagic-do-clique-a-venda/order.webp" f={f} duration={75} dim={0.58} blur={2.0} />
     <div style={{position: "absolute", left: 120, top: 160}}>
       <Layer progress={p(f, 0, 16)}><Kicker>Conversão</Kicker></Layer>
-      <Layer progress={p(f, 5, 24)}><Headline size={62} width={660}>O resultado fecha a trajetória.</Headline></Layer>
+      <Layer progress={p(f, 5, 24)}><Headline size={48} width={560}>O resultado fecha a trajetória.</Headline></Layer>
       <Layer progress={p(f, 14, 34)}><Body width={610}>A venda passa a pertencer ao mesmo percurso que começou no anúncio.</Body></Layer>
     </div>
-    <div style={{position: "absolute", right: 120, top: 245}}>
+    <div style={{position: "absolute", right: 110, top: 245, perspective: 1400, transform: "rotateY(-3deg)"}}>
       <SalePanel f={f} />
     </div>
     <Signal progress={p(f, 4, 68, soft)} y={900} />
@@ -497,10 +535,11 @@ const Scene6: React.FC<{f: number}> = ({f}) => (
 
 const Scene7: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill>
+    <CinematicPlate source="adsmagic-do-clique-a-venda/overview.webp" f={f} duration={90} dim={0.52} blur={2.7} />
     <div style={{position: "absolute", left: 120, top: 85}}>
       <Layer progress={p(f, 0, 14)}><Kicker>Inteligência consolidada</Kicker></Layer>
     </div>
-    <div style={{position: "absolute", left: 330, top: 185}}>
+    <div style={{position: "absolute", left: 330, top: 185, perspective: 1600, transform: "rotateX(1.5deg)"}}>
       <Layer progress={p(f, 5, 28)} y={24} scaleFrom={0.975}><DashboardPanel f={f} /></Layer>
     </div>
     <Signal progress={p(f, 6, 82, soft)} y={940} />
@@ -509,12 +548,13 @@ const Scene7: React.FC<{f: number}> = ({f}) => (
 
 const Scene8: React.FC<{f: number}> = ({f}) => (
   <AbsoluteFill style={{display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center"}}>
+    <CinematicPlate source="adsmagic-do-clique-a-venda/hook.webp" f={f} duration={45} dim={0.48} blur={3.6} />
     <div>
       <Layer progress={p(f, 0, 18)} y={18}>
         <Img src={staticFile("adsmagic-do-clique-a-venda/logo-wordmark-white.svg")} style={{width: 300}} />
       </Layer>
       <Layer progress={p(f, 6, 26)} y={24}>
-        <div style={{marginTop: 38, color: WHITE, fontSize: 78, fontWeight: 800, letterSpacing: -3.2}}>Do clique à venda.</div>
+        <div style={{marginTop: 38, color: WHITE, fontSize: 78, fontWeight: 800, letterSpacing: -3.2}}>Do clique <span style={{color: GREEN}}>à venda.</span></div>
       </Layer>
       <Layer progress={p(f, 14, 34)} y={18}>
         <div style={{marginTop: 22, color: MUTED, fontSize: 27}}>Contexto para decidir melhor onde investir.</div>
