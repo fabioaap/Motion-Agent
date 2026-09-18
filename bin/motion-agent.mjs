@@ -13,6 +13,7 @@ const MANAGED_END = "<!-- motion-agent:end -->";
 const GITIGNORE_START = "# motion-agent:start";
 const GITIGNORE_END = "# motion-agent:end";
 const CUSTOM_SKILLS = ["motion-orchestrator", "template-resolver", "asset-fidelity", "scene-director", "motion-qa"];
+const AIOX_SQUAD_NAME = "motion-squad";
 
 function usage() {
   console.log(`Motion Agent ${VERSION}\n\nUsage:\n  motion-agent init [--target <dir>] [--skip-install] [--skip-remotion-skills] [--force]\n  motion-agent update [--target <dir>] [--skip-install] [--skip-remotion-skills]\n  motion-agent doctor [--target <dir>] [--deep] [--json]\n  motion-agent uninstall [--target <dir>]\n  motion-agent version\n\nRecommended from another repository:\n  pnpm dlx github:fabioaap/Motion-Agent init\n`);
@@ -115,6 +116,15 @@ async function copyCustomSkills(target) {
   }
 }
 
+async function copyAioxSquad(target) {
+  const source = join(PACKAGE_ROOT, "squads", AIOX_SQUAD_NAME);
+  const dest = join(target, "squads", AIOX_SQUAD_NAME);
+  if (!(await exists(source))) throw new Error(`Packaged AIOX squad missing: ${AIOX_SQUAD_NAME}`);
+  await mkdir(join(target, "squads"), {recursive: true});
+  await rm(dest, {recursive: true, force: true});
+  await cp(source, dest, {recursive: true});
+}
+
 function mergeConfigDefaults(defaults, existing) {
   if (
     !defaults ||
@@ -160,6 +170,7 @@ async function writeManifest(target) {
     installedAt: new Date().toISOString(),
     managedPaths: [
       ".motion",
+      `squads/${AIOX_SQUAD_NAME}`,
       ...CUSTOM_SKILLS.map((name) => `.agents/skills/${name}`)
     ],
     officialRemotionSkills: "remotion-dev/skills",
@@ -167,6 +178,12 @@ async function writeManifest(target) {
       catalog: "https://www.remotion.dev/templates",
       registry: ".motion/template-recipes.json",
       reviewedAt: "2026-09-18"
+    },
+    aioxSquad: {
+      name: AIOX_SQUAD_NAME,
+      path: `squads/${AIOX_SQUAD_NAME}`,
+      entryWorkflow: "workflows/create-motion.yaml",
+      slashPrefix: "motion"
     }
   };
   await writeFile(join(target, ".motion", "install-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
@@ -177,7 +194,7 @@ async function configureProject(target) {
     join(target, "AGENTS.md"),
     MANAGED_START,
     MANAGED_END,
-    `## Motion Agent\n\nWhen a request starts with \`@motion\` or explicitly asks for Motion Agent, read \`.agents/skills/motion-orchestrator/SKILL.md\` first. Work in this repository's real product context and reuse its exact components, SVGs, fonts, design tokens and assets before reconstructing anything. Run Scene Topology Audit and the Layerability Gate before implementation whenever component-level motion is expected. After Layerability passes, read \`.agents/skills/template-resolver/SKILL.md\` and \`.motion/template-recipes.json\`, then select the smallest relevant official Remotion template or technique reference before building. A flattened full-scene styleframe may be a visual reference, but camera movement, parallax, zoom, blur or Three.js displacement applied to it do not count as independent component motion. The Three template does not bypass Layerability. Use \`.motion/remotion\` as the isolated preview/render workspace and do not overwrite the host app with a template. Run fidelity, layer separation, motion, composition and regression QA before presenting a preview. Do not require an OpenAI API key in Codex mode. Keep the human approval gate before final delivery.`
+    `## Motion Agent\n\nWhen a request starts with \`@motion\` or explicitly asks for Motion Agent, read \`.agents/skills/motion-orchestrator/SKILL.md\` first. Work in this repository's real product context and reuse its exact components, SVGs, fonts, design tokens and assets before reconstructing anything. Run Scene Topology Audit and the Missing Assets / Layerability gates before implementation whenever component-level motion is expected. If critical independent layers are missing, stop in WAITING_FOR_ASSETS and tell the user exactly which assets are required. After Layerability passes, read \`.agents/skills/template-resolver/SKILL.md\` and \`.motion/template-recipes.json\`, then select the smallest relevant official Remotion template or technique reference before building. A flattened full-scene styleframe may be a visual reference, but camera movement, parallax, zoom, blur or Three.js displacement applied to it do not count as independent component motion. The Three template does not bypass Layerability. Use \`.motion/remotion\` as the isolated preview/render workspace and do not overwrite the host app with a template. Run fidelity, layer separation, motion, composition and regression QA before presenting a preview. Do not require an OpenAI API key in Codex mode. Keep the human approval gate before final delivery.`
   );
   await upsertManagedBlock(
     join(target, ".gitignore"),
@@ -208,6 +225,7 @@ async function init(target, flags, updating = false) {
 
   await copyMotionTemplate(target, updating);
   await copyCustomSkills(target);
+  await copyAioxSquad(target);
   await configureProject(target);
   await writeManifest(target);
 
@@ -255,6 +273,14 @@ async function doctor(target, flags) {
   add("Blank template recipe", templateIds.includes("blank"), "default Motion Agent baseline");
   const motionQa = await readText(join(target, ".agents", "skills", "motion-qa", "SKILL.md"));
   add("Layer Separation Critic", motionQa.includes("## Layer Separation Critic"), ".agents/skills/motion-qa/SKILL.md");
+  const squadRoot = join(target, "squads", AIOX_SQUAD_NAME);
+  add("AIOX Motion Squad", await exists(join(squadRoot, "squad.yaml")), `squads/${AIOX_SQUAD_NAME}/squad.yaml`);
+  const squadManifest = await readText(join(squadRoot, "squad.yaml"));
+  add("AIOX squad slashPrefix", squadManifest.includes("slashPrefix: motion"), "slashPrefix: motion");
+  const squadWorkflow = await readText(join(squadRoot, "workflows", "create-motion.yaml"));
+  add("Missing Assets Gate before build", squadWorkflow.indexOf("step: missing-assets") >= 0 && squadWorkflow.indexOf("step: missing-assets") < squadWorkflow.indexOf("step: build"), "create-motion workflow ordering");
+  const assetRequestTask = await readText(join(squadRoot, "tasks", "request-missing-assets.md"));
+  add("WAITING_FOR_ASSETS hard stop", assetRequestTask.includes("WAITING_FOR_ASSETS") && assetRequestTask.includes("HARD STOP"), "request-missing-assets task");
   const agents = await readText(join(target, "AGENTS.md"));
   add("AGENTS.md integration", agents.includes(MANAGED_START) && agents.includes(MANAGED_END), "managed @motion instructions");
   if (flags.deep && checks.every((item) => item.ok)) {
@@ -272,6 +298,7 @@ async function uninstall(target) {
   for (const skill of CUSTOM_SKILLS) {
     await rm(join(target, ".agents", "skills", skill), {recursive: true, force: true});
   }
+  await rm(join(target, "squads", AIOX_SQUAD_NAME), {recursive: true, force: true});
   await rm(join(target, ".motion"), {recursive: true, force: true});
   await removeManagedBlock(join(target, "AGENTS.md"), MANAGED_START, MANAGED_END);
   await removeManagedBlock(join(target, ".gitignore"), GITIGNORE_START, GITIGNORE_END);
