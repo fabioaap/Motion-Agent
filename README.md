@@ -77,6 +77,7 @@ your-product/
   .agents/
     skills/
       motion-orchestrator/
+      template-router/
       asset-fidelity/
       scene-director/
       motion-qa/
@@ -85,6 +86,7 @@ your-product/
   .motion/
     config.json
     install-manifest.json
+    template-recipes.json
     README.md
     remotion/
       package.json
@@ -157,6 +159,27 @@ pnpm dlx github:fabioaap/Motion-Agent uninstall
 ```
 
 Official Remotion skills are intentionally left in place during uninstall because another workflow in the repository may also use them.
+
+## Official Remotion template recipes
+
+Motion Agent also audits the official Remotion template catalog and installs a project-local recipe registry at `.motion/template-recipes.json`.
+
+The Template Router uses these templates as **architectural recipes**, not as automatic replacements for the project's real source code. The default path remains `default-motion-agent`.
+
+Important recipe families include:
+
+- Prompt to Motion Graphics — validation, dynamic skill selection, guidance/example skills, sanitization and self-correction;
+- Prompt to Video — script + imagery + voiceover pipelines;
+- React Three Fiber — real 3D scenes;
+- Audiogram and Music Visualization — audio-driven social content;
+- Overlay — compositing assets for FFmpeg and traditional editors;
+- Code Hike — animated developer/code content;
+- TikTok — local transcription and word-by-word captions;
+- Render Server — future standalone/VPS render orchestration.
+
+The full audit is in `docs/REMOTION_TEMPLATE_AUDIT.md`.
+
+Motion Agent does not vendor official template source by default. Paid templates are treated as licensed references only.
 
 ## Using `@motion`
 
