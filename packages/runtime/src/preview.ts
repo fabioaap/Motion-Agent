@@ -52,6 +52,18 @@ export function createPreviewJob(context: JobContext): MotionPreviewJob {
     });
   }
 
+  if (context.decomposition) {
+    stages.push({
+      id: "layerability_gate",
+      label: "Layerability Gate",
+      detail: `${context.decomposition.layerability_status} · ${context.decomposition.layer_map.length} layer${context.decomposition.layer_map.length === 1 ? "" : "s"}`,
+      startFrame: stageStart(stages.length, durationFrames),
+      status: context.decomposition.layerability_status === "LAYERED_READY" && context.decomposition.layer_map_verified
+        ? "approved"
+        : "active"
+    });
+  }
+
   if (context.motion_direction) {
     stages.push({
       id: "motion_direction",
