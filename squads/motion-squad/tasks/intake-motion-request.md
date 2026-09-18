@@ -1,57 +1,75 @@
+#### Step 1: Intake Motion Request
+
 task: intakeMotionRequest()
-responsible: motion-director
-responsible_type: Agent
+responsável: Motion Director
+responsavel_type: Agente
 atomic_layer: Analysis
-elicit: false
 
-inputs:
-- field: user_request
-  type: string
-  source: User Input
-  required: true
-- field: references
-  type: array
-  source: User Input or Project Context
-  required: false
-- field: available_assets
-  type: array
-  source: Project Context
-  required: false
-- field: target_format
-  type: string
-  source: User Input or Project Context
-  required: false
+**Entrada:**
+- campo: userRequest
+  tipo: string
+  origem: user input
+  obrigatório: true
+- campo: references
+  tipo: array
+  origem: user input
+  obrigatório: false
+- campo: availableAssets
+  tipo: array
+  origem: project context
+  obrigatório: false
+- campo: targetFormat
+  tipo: string | null
+  origem: user input
+  obrigatório: false
+  padrão: null
 
-outputs:
-- field: scene_summary
-  type: string
-  destination: Workflow Context
-  persisted: true
-- field: motion_objective
-  type: string
-  destination: Workflow Context
-  persisted: true
-- field: assumed_elements
-  type: array
-  destination: Workflow Context
-  persisted: true
-- field: next_task
-  type: string
-  destination: Workflow Context
-  persisted: false
+**Saída:**
+- campo: sceneSummary
+  tipo: string
+  destino: Step 2 (auditSceneTopology)
+  persistido: true
+- campo: motionObjective
+  tipo: string
+  destino: Step 4 (resolveMotionStrategy)
+  persistido: true
+- campo: assumedElements
+  tipo: array
+  destino: Step 2 (auditSceneTopology)
+  persistido: true
 
-# Procedure
+**Checklist:**
+  pre-conditions:
+    - [ ] userRequest is present
+      tipo: pre-condition
+      blocker: true
+      validação: "userRequest.length > 0"
+  post-conditions:
+    - [ ] Candidate moving elements are explicit
+      tipo: post-condition
+      blocker: true
+      validação: "assumedElements.length > 0"
+    - [ ] No implementation started during intake
+      tipo: post-condition
+      blocker: true
+      validação: "sceneBuild == null"
+  acceptance-criteria:
+    - [ ] Scene intent is understandable without inventing a new visual concept
+      tipo: acceptance
+      blocker: false
+      story: MOTION-SQUAD-001
+      manual_check: true
 
-1. Restate the user's intended scene and outcome without adding a new visual concept.
-2. Identify the story event: what changes, what causes it, and what the viewer should understand.
-3. Identify the objects that likely need independent movement.
-4. Record format, duration, brand and source constraints if known.
-5. Route immediately to `audit-scene-topology`.
-6. Do not build or render during intake.
+**Error Handling:**
+- strategy: abort
+- abort_workflow: true
+- notification: log
 
-# Exit Criteria
-
-- Scene objective is explicit.
-- Candidate moving elements are explicit.
-- No implementation has started.
-- Next task is `audit-scene-topology`.
+**Metadata:**
+- story: MOTION-SQUAD-001
+- version: 1.0.0
+- dependencies: []
+- breaking_changes: []
+- author: Motion Agent
+- created_at: 2026-09-18
+- updated_at: 2026-09-18
