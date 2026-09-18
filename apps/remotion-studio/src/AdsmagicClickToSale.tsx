@@ -20,7 +20,7 @@ type Scene = {
 const scenes: Scene[] = [
   {
     id: "hook",
-    source: "adsmagic-do-clique-a-venda/hook.jpg",
+    source: "adsmagic-do-clique-a-venda/hook.webp",
     start: 0,
     end: 60,
     startScale: 1.015,
@@ -32,7 +32,7 @@ const scenes: Scene[] = [
   },
   {
     id: "anuncio",
-    source: "adsmagic-do-clique-a-venda/ad.jpg",
+    source: "adsmagic-do-clique-a-venda/ad.webp",
     start: 60,
     end: 120,
     startScale: 1.08,
@@ -44,7 +44,7 @@ const scenes: Scene[] = [
   },
   {
     id: "clique-whatsapp",
-    source: "adsmagic-do-clique-a-venda/click.jpg",
+    source: "adsmagic-do-clique-a-venda/click.webp",
     start: 120,
     end: 180,
     startScale: 1.02,
@@ -56,7 +56,7 @@ const scenes: Scene[] = [
   },
   {
     id: "conversa",
-    source: "adsmagic-do-clique-a-venda/conversation.jpg",
+    source: "adsmagic-do-clique-a-venda/conversation.webp",
     start: 180,
     end: 255,
     startScale: 1.09,
@@ -68,7 +68,7 @@ const scenes: Scene[] = [
   },
   {
     id: "contexto-evento",
-    source: "adsmagic-do-clique-a-venda/context.jpg",
+    source: "adsmagic-do-clique-a-venda/context.webp",
     start: 255,
     end: 330,
     startScale: 1.025,
@@ -80,7 +80,7 @@ const scenes: Scene[] = [
   },
   {
     id: "pedido-confirmado",
-    source: "adsmagic-do-clique-a-venda/order.jpg",
+    source: "adsmagic-do-clique-a-venda/order.webp",
     start: 330,
     end: 405,
     startScale: 1.07,
@@ -92,7 +92,7 @@ const scenes: Scene[] = [
   },
   {
     id: "visao-consolidada",
-    source: "adsmagic-do-clique-a-venda/overview.jpg",
+    source: "adsmagic-do-clique-a-venda/overview.webp",
     start: 405,
     end: 495,
     startScale: 1.025,
@@ -104,7 +104,7 @@ const scenes: Scene[] = [
   },
   {
     id: "encerramento",
-    source: "adsmagic-do-clique-a-venda/hook.jpg",
+    source: "adsmagic-do-clique-a-venda/hook.webp",
     start: 495,
     end: 540,
     startScale: 1.08,
