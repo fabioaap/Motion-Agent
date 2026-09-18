@@ -14,5 +14,13 @@
     "visualDiff": true,
     "motionKeyframes": 7,
     "regressionGuard": true
+  },
+  "templateResolution": {
+    "enabled": true,
+    "registry": ".motion/template-recipes.json",
+    "officialCatalog": "https://www.remotion.dev/templates",
+    "defaultTemplate": "blank",
+    "preserveHostProject": true,
+    "scaffoldInIsolatedWorkspaceOnly": true
   }
 }
