@@ -44,15 +44,7 @@ export function planExecutionGraph(context: JobContext): ExecutionGraph {
     );
   }
 
-  const templateDependency = needsSource ? "source_asset_agent" : "decomposition_agent";
-  nodes.push(
-    node(
-      "template_resolver",
-      "template_resolver",
-      "DISCOVERY",
-      [templateDependency]
-    )
-  );
+  const discoveryDependency = needsSource ? "source_asset_agent" : "decomposition_agent";
 
   if (context.brief.user_direction_level === "LOW") {
     nodes.push(
@@ -60,17 +52,18 @@ export function planExecutionGraph(context: JobContext): ExecutionGraph {
         "creative_reference_agent",
         "creative_reference_agent",
         "DISCOVERY",
-        ["template_resolver"]
+        [discoveryDependency]
       )
     );
   }
 
   const directionDependency = context.brief.user_direction_level === "LOW"
     ? "creative_reference_agent"
-    : "template_resolver";
+    : discoveryDependency;
 
   nodes.push(node("motion_director", "motion_director", "DISCOVERY", [directionDependency]));
-  nodes.push(node("motion_spec_agent", "motion_spec_agent", "DISCOVERY", ["motion_director"]));
+  nodes.push(node("template_resolver", "template_resolver", "DISCOVERY", ["motion_director"]));
+  nodes.push(node("motion_spec_agent", "motion_spec_agent", "DISCOVERY", ["template_resolver"]));
 
   const strategies = new Set(context.decomposition?.elements.map((item) => item.strategy) ?? []);
   const buildAgents = new Set<AgentName>();
