@@ -1,78 +1,92 @@
+#### Step 2: Audit Scene Topology
+
 task: auditSceneTopology()
-responsible: asset-intake-specialist
-responsible_type: Agent
+responsável: Asset Intake Specialist
+responsavel_type: Agente
 atomic_layer: Analysis
-elicit: false
 
-inputs:
-- field: scene_summary
-  type: string
-  source: Workflow Context
-  required: true
-- field: references
-  type: array
-  source: Workflow Context
-  required: false
-- field: available_assets
-  type: array
-  source: Repository and User Input
-  required: false
+**Entrada:**
+- campo: sceneSummary
+  tipo: string
+  origem: Step 1 (intakeMotionRequest)
+  obrigatório: true
+- campo: assumedElements
+  tipo: array
+  origem: Step 1 (intakeMotionRequest)
+  obrigatório: true
+- campo: references
+  tipo: array
+  origem: user input
+  obrigatório: false
+- campo: availableAssets
+  tipo: array
+  origem: project context
+  obrigatório: false
 
-outputs:
-- field: element_inventory
-  type: array
-  destination: Workflow Context
-  persisted: true
-- field: layer_map
-  type: array
-  destination: Workflow Context
-  persisted: true
-- field: missing_assets
-  type: array
-  destination: Workflow Context
-  persisted: true
-- field: reconstructable_elements
-  type: array
-  destination: Workflow Context
-  persisted: true
-- field: layerability_status
-  type: string
-  destination: Workflow Context
-  persisted: true
+**Saída:**
+- campo: elementInventory
+  tipo: array
+  destino: [Step 3, Step 4]
+  persistido: true
+- campo: layerMap
+  tipo: array
+  destino: [Step 4, Step 6, Step 7]
+  persistido: true
+- campo: missingAssets
+  tipo: array
+  destino: Step 3 (requestMissingAssets)
+  persistido: true
+- campo: reconstructableElements
+  tipo: array
+  destino: Step 3 (requestMissingAssets)
+  persistido: true
+- campo: layerabilityStatus
+  tipo: string
+  destino: workflow state
+  persistido: true
 
-# Procedure
+**Checklist:**
+  pre-conditions:
+    - [ ] Host repository and supplied assets were inspected before requesting new source material
+      tipo: pre-condition
+      blocker: true
+      validação: "sourceAuditCompleted == true"
+  post-conditions:
+    - [ ] Every required moving foreground object has a source classification
+      tipo: post-condition
+      blocker: true
+      validação: "layerMap.every(layer => !layer.requiresAnimation || layer.sourceKind)"
+    - [ ] Full-scene raster does not satisfy multiple moving foreground layers
+      tipo: post-condition
+      blocker: true
+      validação: "noFlattenedForegroundSubstitution == true"
+    - [ ] layerabilityStatus is valid
+      tipo: post-condition
+      blocker: true
+      validação: "['LAYERED_READY','RECONSTRUCTION_READY','BLOCKED_MISSING_ASSETS','FLAT_MOTION_ONLY'].includes(layerabilityStatus)"
+  acceptance-criteria:
+    - [ ] Missing assets are concrete and actionable
+      tipo: acceptance
+      blocker: false
+      story: MOTION-SQUAD-001
+      manual_check: true
 
-1. Inspect the host repository before asking the user for anything.
-2. Break the approved scene into:
-   - environmental background;
-   - typography;
-   - primary foreground objects;
-   - UI/product components;
-   - pointers/cursors;
-   - signal paths;
-   - highlights, glows and masks.
-3. Mark every element that requires independent motion.
-4. For each element, classify its source:
-   - SOURCE_COMPONENT
-   - SVG
-   - TRANSPARENT_ASSET
-   - USER_CUTOUT
-   - RECONSTRUCTABLE_REACT_SVG
-   - BACKGROUND_PLATE
-   - FLATTENED_STYLEFRAME
-   - MISSING
-5. A moving element is layer-ready only when it is independently addressable.
-6. A full-scene raster must never satisfy multiple moving foreground elements.
-7. Set:
-   - `LAYERED_READY` when all required moving elements exist independently;
-   - `RECONSTRUCTION_READY` when missing elements can be faithfully reconstructed without user assets;
-   - `BLOCKED_MISSING_ASSETS` when one or more critical moving elements require source from the user;
-   - `FLAT_MOTION_ONLY` only when the scene can only be treated as one flattened image.
-8. Run `layer-readiness-checklist` and `missing-assets-gate`.
+**Tools:**
+- assetManifestReader:
+    version: 1.0.0
+    used_for: Build a source-aware inventory of scene layers
+    shared_with: [Step 3, Step 6]
 
-# Exit Criteria
+**Error Handling:**
+- strategy: abort
+- abort_workflow: true
+- notification: log
 
-- Every required moving object has a source classification.
-- Missing critical assets are explicit and concrete.
-- The scene has a single layerability status.
-- No build starts in this task.
+**Metadata:**
+- story: MOTION-SQUAD-001
+- version: 1.0.0
+- dependencies: [Step 1]
+- breaking_changes: []
+- author: Motion Agent
+- created_at: 2026-09-18
+- updated_at: 2026-09-18
