@@ -45,7 +45,10 @@ try {
     ".motion/template-recipes.json",
     ".agents/skills/asset-fidelity/SKILL.md",
     ".agents/skills/scene-director/SKILL.md",
-    ".agents/skills/motion-qa/SKILL.md"
+    ".agents/skills/motion-qa/SKILL.md",
+    "squads/motion-squad/squad.yaml",
+    "squads/motion-squad/workflows/create-motion.yaml",
+    "squads/motion-squad/tasks/request-missing-assets.md"
   ]) {
     if (!(await exists(join(target, relativePath)))) throw new Error(`Packaged install missing ${relativePath}`);
   }
@@ -63,10 +66,23 @@ try {
   if (!templateRecipes.templates?.some((item) => item.id === "three")) throw new Error("Packaged template registry missing Three");
   if (!qaSkill.includes("## Layer Separation Critic")) throw new Error("Packaged QA missing Layer Separation Critic");
 
+  const squadManifest = await readFile(join(target, "squads", "motion-squad", "squad.yaml"), "utf8");
+  const squadWorkflow = await readFile(join(target, "squads", "motion-squad", "workflows", "create-motion.yaml"), "utf8");
+  const missingAssetsTask = await readFile(join(target, "squads", "motion-squad", "tasks", "request-missing-assets.md"), "utf8");
+  if (!squadManifest.includes("slashPrefix: motion")) throw new Error("Packaged Motion Squad missing slashPrefix");
+  if (
+    squadWorkflow.indexOf("step: missing-assets") < 0 ||
+    squadWorkflow.indexOf("step: missing-assets") > squadWorkflow.indexOf("step: build")
+  ) throw new Error("Packaged Motion Squad missing assets gate ordering");
+  if (!missingAssetsTask.includes("WAITING_FOR_ASSETS") || !missingAssetsTask.includes("HARD STOP")) {
+    throw new Error("Packaged Motion Squad missing WAITING_FOR_ASSETS hard stop");
+  }
+
   run("pnpm", ["dlx", tarball, "doctor", "--target", target, "--json"], repoRoot);
   run("pnpm", ["dlx", tarball, "uninstall", "--target", target], repoRoot);
 
   if (await exists(join(target, ".motion"))) throw new Error("Packaged uninstall left .motion behind");
+  if (await exists(join(target, "squads", "motion-squad"))) throw new Error("Packaged uninstall left Motion Squad behind");
   console.log(`Packaged installer smoke test passed: ${tarballs[0]}`);
 } finally {
   await rm(temp, {recursive: true, force: true});
