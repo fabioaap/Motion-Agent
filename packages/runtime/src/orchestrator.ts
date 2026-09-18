@@ -1,5 +1,6 @@
 import {
   JobContextSchema,
+  TemplateSelectionSchema,
   type AssetStrategy,
   type JobContext,
   type QAIssue,
@@ -13,6 +14,7 @@ import { MotionStateMachine } from "./state_machine.js";
 import { Supervisor } from "./supervisor.js";
 import { planExecutionGraph } from "./graph.js";
 import { LayerabilityCriticHandler, RegressionCheckerHandler } from "./visual_guard.js";
+import {resolveOfficialRemotionTemplate} from "./templates.js";
 
 export type PreviewHook = (context: JobContext) => Promise<JobContext>;
 
@@ -66,6 +68,16 @@ export class MotionOrchestrator {
     };
     if (!layerability.pass) {
       return this.setState(context, machine, "HUMAN_INPUT_REQUIRED");
+    }
+
+    context = this.setState(context, machine, "TEMPLATE_RESOLUTION");
+    context.template_selection = TemplateSelectionSchema.parse(
+      resolveOfficialRemotionTemplate(context)
+    );
+    if (this.agents.has("template_resolver")) {
+      context = JobContextSchema.parse(
+        (await this.agents.get("template_resolver").run(context)).context
+      );
     }
 
     if (context.brief.user_direction_level === "LOW") {
@@ -143,6 +155,10 @@ export class MotionOrchestrator {
         if (!repairedLayerability.pass) {
           return this.setState(context, machine, "HUMAN_INPUT_REQUIRED");
         }
+        context = this.setState(context, machine, "TEMPLATE_RESOLUTION");
+        context.template_selection = TemplateSelectionSchema.parse(
+          resolveOfficialRemotionTemplate(context)
+        );
       }
 
       context = this.setState(context, machine, "BUILDING");
