@@ -9,6 +9,7 @@ import {
 } from "./MotionJobPreview";
 import {MotionScene} from "./MotionScene";
 import {AdsmagicClickToSale} from "./AdsmagicClickToSale";
+import {AdsmagicScene1Layered} from "./AdsmagicScene1Layered";
 
 const defaultJobProps: MotionJobPreviewProps = {
   jobId: "motion_default",
@@ -82,6 +83,7 @@ export const RemotionRoot: React.FC = () => (
     <Composition id="MotionAgentDemo" component={MotionAgentDemo} durationInFrames={demoMotionSpec.duration_frames} fps={demoMotionSpec.fps} width={1920} height={1080} />
     <Composition id="MotionJobPreview" component={MotionJobPreview} durationInFrames={defaultJobProps.durationFrames} fps={defaultJobProps.fps} width={defaultJobProps.width} height={defaultJobProps.height} defaultProps={defaultJobProps} calculateMetadata={calculateJobMetadata} />
     <Composition id="MotionScene" component={MotionScene} durationInFrames={defaultSceneProps.durationFrames} fps={defaultSceneProps.fps} width={defaultSceneProps.width} height={defaultSceneProps.height} defaultProps={defaultSceneProps} calculateMetadata={calculateSceneMetadata} />
+    <Composition id="AdsmagicScene1Layered" component={AdsmagicScene1Layered} durationInFrames={60} fps={30} width={1920} height={1080} />
     <Composition id="AdsmagicClickToSale" component={AdsmagicClickToSale} durationInFrames={540} fps={30} width={1920} height={1080} />
   </>
 );
