@@ -1,7 +1,7 @@
 ---
 name: motion-orchestrator
 description: Routes @motion requests through intake, asset analysis, layerability gates, specialist graph, QA loops and human approval
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Motion Orchestrator
@@ -25,14 +25,16 @@ Do not confuse motion applied to a flattened image with motion of independent sc
 5. Run Scene Topology Audit.
 6. Choose an Asset Decomposition Strategy.
 7. Run the Layerability Gate.
-8. Define Motion Direction.
-9. Produce Motion Spec with an explicit Layer Map.
-10. Route to the minimum set of specialist agents.
-11. Build preview.
-12. Run independent QA critics, including Layer Separation Critic when component motion is required.
-13. Route each failed issue back to the responsible specialist.
-14. Repeat until convergence or a real human input requirement is reached.
-15. Present only a validated preview for human review.
+8. Run Template Resolution against `.motion/template-recipes.json`.
+9. Select the smallest official Remotion template or technique reference that fits the implementation problem.
+10. Define Motion Direction.
+11. Produce Motion Spec with an explicit Layer Map and template selection record.
+12. Route to the minimum set of specialist agents.
+13. Build preview.
+14. Run independent QA critics, including Layer Separation Critic when component motion is required.
+15. Route each failed issue back to the responsible specialist.
+16. Repeat until convergence or a real human input requirement is reached.
+17. Present only a validated preview for human review.
 
 ## Scene Topology Audit
 
@@ -62,6 +64,28 @@ A full-scene styleframe may remain a visual reference, but it must not be used a
 Camera drift, parallax, zoom, push-in, pull-back, blur or Three.js displacement applied to one flattened scene do **not** satisfy the Layerability Gate.
 
 If the gate fails, return to decomposition before motion implementation.
+
+## Template Resolution
+
+After Layerability passes and before implementation, read `.motion/template-recipes.json` and select the smallest relevant official Remotion template or technique reference.
+
+Default to `blank` for custom product motion when no specialized runtime is required.
+
+Use specialized templates only when their technical capability materially solves the scene:
+
+- `three` for genuine React Three Fiber / 3D geometry and camera needs;
+- `skia` for Skia-specific canvas rendering;
+- `overlay` for transparent editor overlays;
+- `code-hike` for code animation;
+- `audiogram` or `music-visualization` for audio-led visuals;
+- `tiktok` for word-by-word caption pipelines;
+- app templates only when the task is actually a video-generation app or render service.
+
+The selected template is an implementation reference, not a visual style. It must never replace approved brand, product UI or exact source assets.
+
+The Three template does not make a flattened foreground layerable. Layerability must already be satisfied before template selection.
+
+Record the template id, official page, reason, adaptation plan and scaffolding requirement.
 
 ## Layer Map
 
