@@ -1,7 +1,7 @@
 ---
 name: motion-qa
 description: Runs independent fidelity, layer separation, motion, composition, brand and technical validation before delivery
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Motion QA
@@ -39,6 +39,20 @@ Fail the preview when any of these conditions is true:
 The critic should inspect both rendered frames and implementation structure.
 
 A visually attractive preview can still fail Layer Separation Critic.
+
+## Template compatibility check
+
+When a `template_selection` exists, validate that:
+
+- the selected template solves a real technical need identified by Motion Direction;
+- the template is used as an implementation reference, not a visual style source;
+- approved typography, brand, UI, layout and exact assets were not replaced by template defaults;
+- the host application architecture was not overwritten to fit the template;
+- specialized dependencies are justified by the scene;
+- `three` is not being used to disguise a flattened styleframe as component motion;
+- Layer Separation Critic still passes independently of the template.
+
+A specialized template that introduces unnecessary architecture or changes the approved visual language is a QA failure.
 
 ## Approval
 
