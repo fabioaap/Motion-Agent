@@ -6,6 +6,7 @@ export type AgentName =
   | "asset_inspector"
   | "source_asset_agent"
   | "decomposition_agent"
+  | "template_resolver"
   | "creative_reference_agent"
   | "motion_director"
   | "motion_spec_agent"
