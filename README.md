@@ -77,6 +77,7 @@ your-product/
   .agents/
     skills/
       motion-orchestrator/
+      template-resolver/
       asset-fidelity/
       scene-director/
       motion-qa/
@@ -85,6 +86,7 @@ your-product/
   .motion/
     config.json
     install-manifest.json
+    template-recipes.json     curated official Remotion template registry
     README.md
     remotion/
       package.json
@@ -135,7 +137,7 @@ pnpm dlx "github:fabioaap/Motion-Agent#feat/adsmagic-do-clique-a-venda-motion" u
 pnpm dlx "github:fabioaap/Motion-Agent#feat/adsmagic-do-clique-a-venda-motion" doctor --deep
 ```
 
-The doctor output must report `pipeline version: layered-motion-v1`, `Layerability Gate` and `Layer Separation Critic`.
+The doctor output must report `pipeline version: layered-motion-templates-v1`, `Layerability Gate`, `Template Resolution`, `Three template recipe` and `Layer Separation Critic`.
 
 ### Doctor
 
@@ -231,6 +233,40 @@ When component-level motion is required, a flattened full-scene styleframe is re
 
 The pipeline must pass a **Layerability Gate** before implementation and a **Layer Separation Critic** before delivery.
 
+After Layerability passes, Motion Agent resolves an implementation reference against the official Remotion templates registry stored at `.motion/template-recipes.json`. Specialized templates are used as technical patterns, not as visual styles. For example, `three` is selected only for genuine React Three Fiber / 3D needs; it is never a substitute for separating a flattened styleframe.
+
+## Official Remotion template integration
+
+Motion Agent carries a local registry of the current free templates from the official Remotion catalog. The resolver selects the smallest technical baseline that fits the job and preserves the host project.
+
+Important examples:
+
+- `blank` — default for custom product motion and AI-authored React scenes
+- `three` — React Three Fiber / true 3D geometry and camera
+- `skia` — React Native Skia canvas effects
+- `overlay` — transparent overlays for external editors
+- `code-hike` — animated code snippets
+- `audiogram` — podcast and speech waveform clips
+- `music-visualization` — music-driven social video
+- `tiktok` — word-by-word captions with local Whisper.cpp
+- `prompt-to-motion-graphics` — products that generate and preview Remotion code
+- `prompt-to-video` — prompt → script/images/voiceover pipelines
+- app and render-server templates — only when the task is actually a video-generation application or service
+
+The registry is installed at:
+
+```text
+.motion/template-recipes.json
+```
+
+The selection skill is installed at:
+
+```text
+.agents/skills/template-resolver/SKILL.md
+```
+
+The catalog does not vendor or overwrite the official template source. When a specialized scaffold is actually needed, the registry records the official `pnpm create video --<template>` command and official template page.
+
 ## Motion workflow
 
 ```text
@@ -241,9 +277,10 @@ The pipeline must pass a **Layerability Gate** before implementation and a **Lay
   -> scene topology audit
   -> source resolution when needed
   -> layerability gate
+  -> official Remotion template resolution
   -> creative direction when needed
   -> motion direction
-  -> motion spec + layer map
+  -> motion spec + layer map + template selection
   -> specialist routing
   -> Remotion build
   -> preview render
@@ -279,6 +316,7 @@ packages/
 
 skills/custom/           project-facing Motion Agent skills
 vendor/remotion-skills/  official Remotion skills source reference
+installer/template/motion/template-recipes.json  official template catalog + routing rules
 ```
 
 ## Contributing to Motion Agent
