@@ -21,14 +21,15 @@ Do not jump directly from prompt to Remotion code.
 3. Ask only for missing information that materially changes the creative or technical direction.
 4. Run Asset Audit.
 5. Choose an Asset Decomposition Strategy.
-6. Define Motion Direction.
-7. Produce Motion Spec.
-8. Route to the minimum set of specialist agents.
-9. Build preview.
-10. Run independent QA critics.
-11. Route each failed issue back to the responsible specialist.
-12. Repeat until convergence or a real human input requirement is reached.
-13. Present only a validated preview for human review.
+6. Run Template Router against `.motion/template-recipes.json` and select either `default-motion-agent` or a materially relevant official Remotion recipe.
+7. Define Motion Direction, recording the selected recipe and what patterns are being reused.
+8. Produce Motion Spec.
+9. Route to the minimum set of specialist agents.
+10. Build preview.
+11. Run independent QA critics.
+12. Route each failed issue back to the responsible specialist.
+13. Repeat until convergence or a real human input requirement is reached.
+14. Present only a validated preview for human review.
 
 ## Creative guidance
 
@@ -49,3 +50,7 @@ QA must be independent from the builder that produced the work.
 Critical issues, major fidelity issues, missing assets, wrong icons, render errors and type errors block delivery.
 
 Repeated failure of the same technique must trigger Strategy Review instead of another equivalent retry.
+
+## Template routing
+
+Templates are architectural recipes, not fidelity shortcuts. Consult `.agents/skills/template-router/SKILL.md` before selecting implementation architecture. Keep host-project components and assets authoritative, and do not vendor official template source by default.
