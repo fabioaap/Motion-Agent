@@ -277,9 +277,9 @@ The catalog does not vendor or overwrite the official template source. When a sp
   -> scene topology audit
   -> source resolution when needed
   -> layerability gate
-  -> official Remotion template resolution
   -> creative direction when needed
   -> motion direction
+  -> official Remotion template resolution
   -> motion spec + layer map + template selection
   -> specialist routing
   -> Remotion build
