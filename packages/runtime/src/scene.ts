@@ -1,5 +1,6 @@
 import {z} from "zod";
 import type {JobContext} from "./contracts.js";
+import {requiresLayerability} from "./qa.js";
 
 export const MotionSceneLayerSchema = z.object({
   elementId: z.string().min(1),
@@ -18,7 +19,9 @@ export const MotionSceneLayerSchema = z.object({
   width: z.number().positive().max(1).default(0.82),
   height: z.number().positive().max(1).default(0.78),
   zIndex: z.number().int().default(1),
-  originalAsset: z.boolean().default(true)
+  originalAsset: z.boolean().default(true),
+  sourceKind: z.string().default("OTHER"),
+  independentlyAddressable: z.boolean().default(false)
 }).refine((value) => value.endFrame >= value.startFrame, {
   message: "endFrame must be greater than or equal to startFrame"
 });
@@ -60,6 +63,18 @@ function safeSource(source: string, fallback: string): string {
 }
 
 export function createSceneJob(context: JobContext): MotionSceneJob {
+  if (requiresLayerability(context)) {
+    const decomposition = context.decomposition;
+    if (
+      !decomposition ||
+      decomposition.layerability_status !== "LAYERED_READY" ||
+      !decomposition.layer_map_verified ||
+      decomposition.full_scene_flattened_foreground
+    ) {
+      throw new Error("Component-motion scene cannot be created before the Layerability Gate passes");
+    }
+  }
+
   const fps = context.motion_spec?.fps ?? context.brief.fps ?? 30;
   const width = context.brief.width ?? 1920;
   const height = context.brief.height ?? 1080;
@@ -94,6 +109,17 @@ export function createSceneJob(context: JobContext): MotionSceneJob {
       (item) => item.element_id === element.element_id
     );
     const layout = getLayoutHint(context, element.element_id);
+    const layer = context.decomposition?.layer_map.find(
+      (item) => item.element_id === element.element_id
+    );
+
+    if (
+      element.requires_animation &&
+      requiresLayerability(context) &&
+      (!layer || !layer.independently_addressable || layer.source_kind === "FLATTENED_STYLEFRAME")
+    ) {
+      throw new Error(`Animated element ${element.element_id} is not independently addressable`);
+    }
 
     return [{
       elementId: element.element_id,
@@ -122,7 +148,9 @@ export function createSceneJob(context: JobContext): MotionSceneJob {
         "MASK",
         "OVERLAY",
         "HYBRID"
-      ].includes(element.strategy)
+      ].includes(element.strategy),
+      sourceKind: layer?.source_kind ?? "OTHER",
+      independentlyAddressable: layer?.independently_addressable ?? false
     }];
   });
 
