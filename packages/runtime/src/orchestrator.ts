@@ -125,9 +125,26 @@ export class MotionOrchestrator {
         }
       }
 
+      const hadLayerabilityIssue = context.open_issues.some(
+        (issue) => issue.category === "LAYERABILITY"
+      );
       context = await this.fixIssues(context);
       context.qa_reports = [];
       context.open_issues = [];
+
+      if (hadLayerabilityIssue) {
+        context = this.setState(context, machine, "SCENE_TOPOLOGY_AUDIT");
+        context = this.setState(context, machine, "LAYERABILITY_GATE");
+        const repairedLayerability = this.evaluateLayerabilityGate(context);
+        context.metadata = {
+          ...context.metadata,
+          layerability_gate: repairedLayerability
+        };
+        if (!repairedLayerability.pass) {
+          return this.setState(context, machine, "HUMAN_INPUT_REQUIRED");
+        }
+      }
+
       context = this.setState(context, machine, "BUILDING");
     }
   }
