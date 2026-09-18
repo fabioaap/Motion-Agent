@@ -4,7 +4,9 @@ export const JobStateSchema = z.enum([
   "INTAKE",
   "CONTEXT_READY",
   "ASSET_AUDIT",
+  "SCENE_TOPOLOGY_AUDIT",
   "SOURCE_RESOLUTION",
+  "LAYERABILITY_GATE",
   "DIRECTION_DISCOVERY",
   "DIRECTION_READY",
   "MOTION_SPEC_READY",
@@ -84,6 +86,7 @@ export const VideoBriefSchema = z.object({
   materials: z.array(z.string()).default([]),
   audio_required: z.boolean().default(false),
   interaction_required: z.boolean().default(false),
+  component_motion_required: z.boolean().default(false),
   brand_context: z.string().nullable().default(null),
   constraints: z.array(z.string()).default([]),
   user_direction_level: z.enum(["LOW", "MEDIUM", "HIGH", "COMPLETE"]).default("LOW")
@@ -125,10 +128,43 @@ export const DecompositionElementSchema = z.object({
   scope_status: z.enum(["OPEN", "LOCKED"]).default("OPEN")
 });
 
+export const LayerSourceKindSchema = z.enum([
+  "BACKGROUND_PLATE",
+  "SOURCE_COMPONENT",
+  "SVG",
+  "TRANSPARENT_ASSET",
+  "CUTOUT",
+  "REACT",
+  "MASK",
+  "FLATTENED_STYLEFRAME",
+  "OTHER"
+]);
+export type LayerSourceKind = z.infer<typeof LayerSourceKindSchema>;
+
+export const LayerMapEntrySchema = z.object({
+  element_id: z.string().min(1),
+  role: z.string().default(""),
+  source_kind: LayerSourceKindSchema,
+  independently_addressable: z.boolean().default(false)
+});
+export type LayerMapEntry = z.infer<typeof LayerMapEntrySchema>;
+
+export const LayerabilityStatusSchema = z.enum([
+  "UNKNOWN",
+  "LAYERED_READY",
+  "DECOMPOSITION_REQUIRED",
+  "BLOCKED_MISSING_SOURCE"
+]);
+export type LayerabilityStatus = z.infer<typeof LayerabilityStatusSchema>;
+
 export const DecompositionSchema = z.object({
   job_id: z.string().min(1),
   scene_id: z.string().min(1),
-  elements: z.array(DecompositionElementSchema)
+  elements: z.array(DecompositionElementSchema),
+  layer_map: z.array(LayerMapEntrySchema).default([]),
+  layerability_status: LayerabilityStatusSchema.default("UNKNOWN"),
+  layer_map_verified: z.boolean().default(false),
+  full_scene_flattened_foreground: z.boolean().default(false)
 });
 export type Decomposition = z.infer<typeof DecompositionSchema>;
 
@@ -181,7 +217,7 @@ export const QAIssueSchema = z.object({
   scene_id: z.string().min(1),
   frame_start: z.number().int().nonnegative().nullable().default(null),
   frame_end: z.number().int().nonnegative().nullable().default(null),
-  category: z.enum(["FIDELITY", "MOTION", "COMPOSITION", "BRAND", "TECHNICAL", "REGRESSION"]),
+  category: z.enum(["FIDELITY", "LAYERABILITY", "MOTION", "COMPOSITION", "BRAND", "TECHNICAL", "REGRESSION"]),
   severity: SeveritySchema,
   element_id: z.string().nullable().default(null),
   expected: z.string().min(1),
@@ -213,6 +249,8 @@ export const BuildResultSchema = z.object({
   assets_used: z.array(z.string()).default([]),
   components_created: z.array(z.string()).default([]),
   components_reused: z.array(z.string()).default([]),
+  independent_layers: z.array(z.string()).default([]),
+  flattened_foreground_used: z.boolean().default(false),
   known_limitations: z.array(z.string()).default([])
 });
 export type BuildResult = z.infer<typeof BuildResultSchema>;
