@@ -1,56 +1,106 @@
+#### Step 6: Build Motion Scene
+
 task: buildMotionScene()
-responsible: remotion-builder
-responsible_type: Agent
-atomic_layer: Implementation
-elicit: false
+responsável: Remotion Builder
+responsavel_type: Agente
+atomic_layer: Media
 
-inputs:
-- field: build_mode
-  type: string
-  source: Workflow Context
-  required: true
-- field: layer_map
-  type: array
-  source: Workflow Context
-  required: true
-- field: motion_strategy
-  type: object
-  source: Workflow Context
-  required: true
-- field: selected_template
-  type: object
-  source: Workflow Context
-  required: true
+**Entrada:**
+- campo: buildMode
+  tipo: string
+  origem: Step 4 (resolveMotionStrategy)
+  obrigatório: true
+- campo: layerMap
+  tipo: array
+  origem: Step 2 (auditSceneTopology)
+  obrigatório: true
+- campo: motionStrategy
+  tipo: object
+  origem: Step 4 (resolveMotionStrategy)
+  obrigatório: true
+- campo: selectedTemplate
+  tipo: object
+  origem: Step 5 (resolveTemplate)
+  obrigatório: true
 
-outputs:
-- field: scene_build
-  type: object
-  destination: .motion/remotion
-  persisted: true
-- field: preview
-  type: file
-  destination: .motion/remotion/out
-  persisted: true
-- field: build_notes
-  type: object
-  destination: Workflow Context
-  persisted: true
+**Saída:**
+- campo: sceneBuild
+  tipo: object
+  destino: Step 7 (reviewMotionScene)
+  persistido: true
+- campo: preview
+  tipo: string (file path)
+  destino: Step 7 (reviewMotionScene)
+  persistido: true
+- campo: buildNotes
+  tipo: object
+  destino: Step 7 (reviewMotionScene)
+  persistido: true
 
-# Procedure
+**Checklist:**
+  pre-conditions:
+    - [ ] Build mode is executable
+      tipo: pre-condition
+      blocker: true
+      validação: "['LAYERED_MOTION','FLAT_MOTION_ALLOWED'].includes(buildMode)"
+    - [ ] Every required moving element is independently addressable
+      tipo: pre-condition
+      blocker: true
+      validação: "layerMap.filter(x => x.requiresAnimation).every(x => x.independentlyAddressable)"
+    - [ ] No unresolved critical asset remains
+      tipo: pre-condition
+      blocker: true
+      validação: "layerMap.every(x => !x.requiresAnimation || x.sourceKind != 'MISSING')"
+  post-conditions:
+    - [ ] Major moving elements remain independently addressable in implementation
+      tipo: post-condition
+      blocker: true
+      validação: "buildNotes.independentLayers.length >= layerMap.filter(x => x.requiresAnimation).length"
+    - [ ] Full styleframe is not used as a hidden foreground substitute
+      tipo: post-condition
+      blocker: true
+      validação: "buildNotes.flattenedForegroundUsed != true"
+    - [ ] Preview rendered successfully
+      tipo: post-condition
+      blocker: true
+      validação: "preview != null"
+  acceptance-criteria:
+    - [ ] Scene communicates the intended event without slide-like motion
+      tipo: acceptance
+      blocker: false
+      story: MOTION-SQUAD-001
+      manual_check: true
 
-1. HARD FAIL if build mode is `RECONSTRUCTION_FIRST` and reconstruction has not completed.
-2. HARD FAIL if any required moving element lacks an independent source.
-3. Implement the Layer Map exactly.
-4. Use React/SVG for simple text, vectors, glows, paths and shapes.
-5. Use exact source components, SVGs, transparent assets or user cutouts for complex elements.
-6. A background raster may remain a background plate.
-7. Do not place the full approved styleframe behind the scene as a hidden foreground substitute.
-8. Build a short isolated scene preview before full-film integration.
-9. Render representative checkpoints.
-10. Store build notes listing every independent layer actually implemented.
+**Tools:**
+- remotionRuntime:
+    version: 1.0.0
+    used_for: Validate layerable builds and execute Remotion
+    shared_with: [Step 8]
 
-# Exit Criteria
+**Scripts:**
+- scripts/prepare-scene.js:
+    description: Generates layerability-ready scene metadata
+    language: javascript
+    version: 1.0.0
+- scripts/render-scene.js:
+    description: Renders a Remotion composition
+    language: javascript
+    version: 1.0.0
 
-- Major moving elements are independently addressable in code.
-- Preview renders without missing assets.
-- Build notes match the Layer Map.
+**Error Handling:**
+- strategy: abort
+- abort_workflow: true
+- notification: log
+
+**Metadata:**
+- story: MOTION-SQUAD-001
+- version: 1.0.0
+- dependencies: [Step 2, Step 4, Step 5]
+- breaking_changes: []
+- author: Motion Agent
+- created_at: 2026-09-18
+- updated_at: 2026-09-18
+
+**Execution Rule:**
+
+HARD FAIL if the scene is not layer-ready. Do not downgrade silently to flattened slide animation.
