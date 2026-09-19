@@ -1,6 +1,6 @@
 import {z} from "zod";
 import type {JobContext} from "./contracts.js";
-import {requiresLayerability} from "./qa.js";
+import {assessLayerability, requiresLayerability} from "./qa.js";
 
 export const MotionSceneLayerSchema = z.object({
   elementId: z.string().min(1),
@@ -64,13 +64,8 @@ function safeSource(source: string, fallback: string): string {
 
 export function createSceneJob(context: JobContext): MotionSceneJob {
   if (requiresLayerability(context)) {
-    const decomposition = context.decomposition;
-    if (
-      !decomposition ||
-      decomposition.layerability_status !== "LAYERED_READY" ||
-      !decomposition.layer_map_verified ||
-      decomposition.full_scene_flattened_foreground
-    ) {
+    const gate = assessLayerability(context);
+    if (!gate.pass) {
       throw new Error("Component-motion scene cannot be created before the Layerability Gate passes");
     }
   }

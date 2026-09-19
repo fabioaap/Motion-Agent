@@ -8,7 +8,13 @@ import {
 } from "./contracts.js";
 import { AgentRegistry, type AgentName } from "./agents.js";
 import { AttemptStore } from "./memory.js";
-import { aggregateQA, requiredCriticsFor, requiresLayerability } from "./qa.js";
+import {
+  assessLayerability,
+  buildMissingAssetResponse,
+  aggregateQA,
+  requiredCriticsFor,
+  type LayerabilityGateResult
+} from "./qa.js";
 import { routeIssue, chooseFallback } from "./routing.js";
 import { MotionStateMachine } from "./state_machine.js";
 import { Supervisor } from "./supervisor.js";
@@ -61,11 +67,8 @@ export class MotionOrchestrator {
     }
 
     context = this.setState(context, machine, "LAYERABILITY_GATE");
-    const layerability = this.evaluateLayerabilityGate(context);
-    context.metadata = {
-      ...context.metadata,
-      layerability_gate: layerability
-    };
+    const layerability = assessLayerability(context);
+    context = this.recordLayerabilityGate(context, layerability);
     if (!layerability.pass) {
       return this.setState(context, machine, "HUMAN_INPUT_REQUIRED");
     }
@@ -148,11 +151,8 @@ export class MotionOrchestrator {
       if (hadLayerabilityIssue) {
         context = this.setState(context, machine, "SCENE_TOPOLOGY_AUDIT");
         context = this.setState(context, machine, "LAYERABILITY_GATE");
-        const repairedLayerability = this.evaluateLayerabilityGate(context);
-        context.metadata = {
-          ...context.metadata,
-          layerability_gate: repairedLayerability
-        };
+        const repairedLayerability = assessLayerability(context);
+        context = this.recordLayerabilityGate(context, repairedLayerability);
         if (!repairedLayerability.pass) {
           return this.setState(context, machine, "HUMAN_INPUT_REQUIRED");
         }
@@ -172,6 +172,7 @@ export class MotionOrchestrator {
     if (parsed.state !== "READY_FOR_HUMAN") {
       throw new Error("Job must be READY_FOR_HUMAN before approval");
     }
+    this.assertLayerabilityGate(parsed);
     const machine = new MotionStateMachine(parsed.state);
     let next = this.setState(parsed, machine, "HUMAN_APPROVED");
     next = await this.render(next, machine);
@@ -179,6 +180,7 @@ export class MotionOrchestrator {
   }
 
   private async build(context: JobContext, machine: MotionStateMachine): Promise<JobContext> {
+    this.assertLayerabilityGate(context);
     if (machine.state !== "BUILDING") {
       context = this.setState(context, machine, "BUILDING");
     }
@@ -324,49 +326,29 @@ export class MotionOrchestrator {
     return planExecutionGraph(context).build_agents;
   }
 
-  private evaluateLayerabilityGate(context: JobContext): {pass: boolean; status: string; reasons: string[]} {
-    if (!requiresLayerability(context)) {
-      return {pass: true, status: "NOT_REQUIRED", reasons: []};
-    }
-
-    const decomposition = context.decomposition;
-    const reasons: string[] = [];
-
-    if (!decomposition) {
-      reasons.push("Missing decomposition for component-level motion");
-      return {pass: false, status: "FAIL", reasons};
-    }
-
-    if (decomposition.layerability_status !== "LAYERED_READY") {
-      reasons.push(`Layerability status is ${decomposition.layerability_status}`);
-    }
-    if (!decomposition.layer_map_verified) {
-      reasons.push("Layer Map is not verified");
-    }
-    if (decomposition.full_scene_flattened_foreground) {
-      reasons.push("Flattened full-scene foreground detected");
-    }
-
-    const layerMap = new Map(decomposition.layer_map.map((layer) => [layer.element_id, layer]));
-    for (const element of decomposition.elements.filter((item) => item.requires_animation)) {
-      const layer = layerMap.get(element.element_id);
-      if (!layer) {
-        reasons.push(`Animated element ${element.element_id} is missing from the Layer Map`);
-        continue;
+  private recordLayerabilityGate(context: JobContext, gate: LayerabilityGateResult): JobContext {
+    return JobContextSchema.parse({
+      ...context,
+      metadata: {
+        ...context.metadata,
+        layerability_gate: gate,
+        build_mode: gate.status === "FLAT_MOTION_ONLY" ? "FLAT_MOTION_ALLOWED" : "LAYERED_MOTION",
+        ...(gate.pass ? {} : {
+          workflow_status: gate.status === "FLAT_MOTION_ONLY"
+            ? "WAITING_FOR_USER_DECISION"
+            : "WAITING_FOR_ASSETS",
+          hard_stop: true,
+          asset_request: buildMissingAssetResponse(context, gate)
+        })
       }
-      if (!layer.independently_addressable) {
-        reasons.push(`Animated element ${element.element_id} is not independently addressable`);
-      }
-      if (layer.source_kind === "FLATTENED_STYLEFRAME") {
-        reasons.push(`Animated element ${element.element_id} still depends on a flattened styleframe`);
-      }
-    }
+    });
+  }
 
-    return {
-      pass: reasons.length === 0,
-      status: reasons.length === 0 ? "PASS" : "FAIL",
-      reasons
-    };
+  private assertLayerabilityGate(context: JobContext): void {
+    const gate = assessLayerability(context);
+    if (!gate.pass) {
+      throw new Error(`Layerability Gate failed (${gate.status}): ${gate.reasons.join("; ")}`);
+    }
   }
 
   private needsSourceResolution(context: JobContext): boolean {
@@ -426,6 +408,7 @@ export class MotionOrchestrator {
   }
 
   private async render(context: JobContext, machine: MotionStateMachine): Promise<JobContext> {
+    this.assertLayerabilityGate(context);
     context = this.setState(context, machine, "FINAL_RENDER");
     if (this.agents.has("render_agent")) {
       context = (await this.agents.get("render_agent").run(context)).context;

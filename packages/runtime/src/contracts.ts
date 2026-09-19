@@ -153,8 +153,11 @@ export type LayerMapEntry = z.infer<typeof LayerMapEntrySchema>;
 export const LayerabilityStatusSchema = z.enum([
   "UNKNOWN",
   "LAYERED_READY",
+  "RECONSTRUCTION_READY",
   "DECOMPOSITION_REQUIRED",
-  "BLOCKED_MISSING_SOURCE"
+  "BLOCKED_MISSING_SOURCE",
+  "BLOCKED_MISSING_ASSETS",
+  "FLAT_MOTION_ONLY"
 ]);
 export type LayerabilityStatus = z.infer<typeof LayerabilityStatusSchema>;
 
