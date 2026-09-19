@@ -240,6 +240,8 @@ Motion-Agent also ships its own structural regression check:
 pnpm squad:validate
 ```
 
+This check includes the adversarial A-F layerability cases: flattened styleframes are blocked before build/render, Three.js cannot bypass the gate, independent and reconstructed layers are accepted, flat motion requires explicit authorization, and repository assets are resolved before requesting uploads. If the local AIOX installation does not provide `*validate-squad`, run this check as the repository-native equivalent.
+
 ## Using `@motion`
 
 After installation, open the **target product repository** in Codex and work there normally.

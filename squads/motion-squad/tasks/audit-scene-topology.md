@@ -60,6 +60,10 @@ atomic_layer: Analysis
       tipo: post-condition
       blocker: true
       validação: "noFlattenedForegroundSubstitution == true"
+    - [ ] A flattened reference is explicitly classified as FLATTENED_STYLEFRAME, never as component motion
+      tipo: post-condition
+      blocker: true
+      validaÃ§Ã£o: "layerMap sourceKind FLATTENED_STYLEFRAME requires an independent replacement before build"
     - [ ] layerabilityStatus is valid
       tipo: post-condition
       blocker: true

@@ -44,6 +44,24 @@ async function exists(path) {
   try { await access(path); return true; } catch { return false; }
 }
 
+async function listFiles(root, prefix = "") {
+  const files = [];
+  for (const entry of await readdir(root, {withFileTypes: true})) {
+    const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) files.push(...await listFiles(join(root, entry.name), relative));
+    else files.push(relative.replaceAll("\\", "/"));
+  }
+  return files;
+}
+
+async function removeEmptyDirectories(root) {
+  if (!(await exists(root))) return;
+  for (const entry of await readdir(root, {withFileTypes: true})) {
+    if (entry.isDirectory()) await removeEmptyDirectories(join(root, entry.name));
+  }
+  if ((await readdir(root)).length === 0) await rm(root, {recursive: true, force: true});
+}
+
 async function readText(path, fallback = "") {
   try { return await readFile(path, "utf8"); } catch { return fallback; }
 }
@@ -162,6 +180,11 @@ async function copyMotionTemplate(target, preserveConfig = true) {
 }
 
 async function writeManifest(target) {
+  const templateRoot = join(PACKAGE_ROOT, "installer", "template", "motion");
+  const managedMotionFiles = [
+    ...await listFiles(templateRoot),
+    "install-manifest.json"
+  ].map((path) => `.motion/${path}`);
   const manifest = {
     schemaVersion: 1,
     installerVersion: VERSION,
@@ -173,6 +196,7 @@ async function writeManifest(target) {
       `squads/${AIOX_SQUAD_NAME}`,
       ...CUSTOM_SKILLS.map((name) => `.agents/skills/${name}`)
     ],
+    managedMotionFiles,
     officialRemotionSkills: "remotion-dev/skills",
     officialRemotionTemplates: {
       catalog: "https://www.remotion.dev/templates",
@@ -194,7 +218,7 @@ async function configureProject(target) {
     join(target, "AGENTS.md"),
     MANAGED_START,
     MANAGED_END,
-    `## Motion Agent\n\nWhen a request starts with \`@motion\` or explicitly asks for Motion Agent, read \`.agents/skills/motion-orchestrator/SKILL.md\` first. Work in this repository's real product context and reuse its exact components, SVGs, fonts, design tokens and assets before reconstructing anything. Run Scene Topology Audit and the Missing Assets / Layerability gates before implementation whenever component-level motion is expected. If critical independent layers are missing, stop in WAITING_FOR_ASSETS and tell the user exactly which assets are required. After Layerability passes, read \`.agents/skills/template-resolver/SKILL.md\` and \`.motion/template-recipes.json\`, then select the smallest relevant official Remotion template or technique reference before building. A flattened full-scene styleframe may be a visual reference, but camera movement, parallax, zoom, blur or Three.js displacement applied to it do not count as independent component motion. The Three template does not bypass Layerability. Use \`.motion/remotion\` as the isolated preview/render workspace and do not overwrite the host app with a template. Run fidelity, layer separation, motion, composition and regression QA before presenting a preview. Do not require an OpenAI API key in Codex mode. Keep the human approval gate before final delivery.`
+    `## Motion Agent\n\nWhen a request starts with \`@motion\` or explicitly asks for Motion Agent, read \`.agents/skills/motion-orchestrator/SKILL.md\` first. Work in this repository's real product context and reuse its exact components, SVGs, fonts, design tokens and assets before reconstructing anything. Run Scene Topology Audit and the Missing Assets / Layerability Gate before implementation whenever component-level motion is expected. If critical independent layers are missing, stop in WAITING_FOR_ASSETS and tell the user exactly which assets are required. After Layerability passes, read \`.agents/skills/template-resolver/SKILL.md\` and \`.motion/template-recipes.json\`, then select the smallest relevant official Remotion template or technique reference before building. A flattened full-scene styleframe may be a visual reference, but camera movement, parallax, zoom, blur or Three.js displacement applied to it do not count as independent component motion. The Three template does not bypass Layerability. Use \`.motion/remotion\` as the isolated preview/render workspace and do not overwrite the host app with a template. Run fidelity, layer separation, motion, composition and regression QA before presenting a preview. Do not require an OpenAI API key in Codex mode. Keep the human approval gate before final delivery.`
   );
   await upsertManagedBlock(
     join(target, ".gitignore"),
@@ -299,7 +323,16 @@ async function uninstall(target) {
     await rm(join(target, ".agents", "skills", skill), {recursive: true, force: true});
   }
   await rm(join(target, "squads", AIOX_SQUAD_NAME), {recursive: true, force: true});
-  await rm(join(target, ".motion"), {recursive: true, force: true});
+  const motionRoot = join(target, ".motion");
+  const manifest = JSON.parse(await readText(join(motionRoot, "install-manifest.json"), "{}"));
+  const managedMotionFiles = Array.isArray(manifest.managedMotionFiles)
+    ? manifest.managedMotionFiles.filter((path) => path.startsWith(".motion/") && !path.includes(".."))
+    : [];
+  for (const path of managedMotionFiles) await rm(join(target, path), {force: true});
+  await removeEmptyDirectories(motionRoot);
+  if (!managedMotionFiles.length && await exists(motionRoot)) {
+    console.log("Preserved unmanaged .motion files; remove them only after reviewing ownership.");
+  }
   await removeManagedBlock(join(target, "AGENTS.md"), MANAGED_START, MANAGED_END);
   await removeManagedBlock(join(target, ".gitignore"), GITIGNORE_START, GITIGNORE_END);
   await patchPackageJson(target, true);

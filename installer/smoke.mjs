@@ -2,10 +2,11 @@ import {mkdtemp, readFile, rm, writeFile, access} from "node:fs/promises";
 import {spawnSync} from "node:child_process";
 import {join} from "node:path";
 import {tmpdir} from "node:os";
+import {fileURLToPath} from "node:url";
 
 const root = await mkdtemp(join(tmpdir(), "motion-agent-installer-"));
 const target = join(root, "host-project");
-const cli = new URL("../bin/motion-agent.mjs", import.meta.url).pathname;
+const cli = fileURLToPath(new URL("../bin/motion-agent.mjs", import.meta.url));
 
 async function exists(path) {
   try { await access(path); return true; } catch { return false; }
@@ -121,9 +122,11 @@ try {
     throw new Error("update did not merge Template Resolution defaults into existing config");
   }
 
+  await writeFile(join(target, ".motion", "user-owned.txt"), "must survive uninstall\n");
+
   run(["uninstall", "--target", target]);
 
-  if (await exists(join(target, ".motion"))) throw new Error(".motion still exists after uninstall");
+  if (!(await exists(join(target, ".motion", "user-owned.txt")))) throw new Error("uninstall deleted an unrelated .motion file");
   if (await exists(join(target, ".agents", "skills", "motion-orchestrator"))) throw new Error("custom skill still exists after uninstall");
   if (await exists(join(target, "squads", "motion-squad"))) throw new Error("Motion Squad still exists after uninstall");
   const afterAgents = await readFile(join(target, "AGENTS.md"), "utf8");

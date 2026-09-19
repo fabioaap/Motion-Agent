@@ -1,5 +1,8 @@
 import {access, readFile} from "node:fs/promises";
+import assert from "node:assert/strict";
 import {join, resolve} from "node:path";
+import {buildAssetManifest, missingCriticalLayers} from "../squads/motion-squad/tools/asset-manifest-reader.js";
+import {assertLayerableBuild} from "../squads/motion-squad/tools/remotion-runtime.js";
 
 const root = resolve(process.cwd(), "squads", "motion-squad");
 
@@ -139,4 +142,68 @@ for (const token of ["name: motion-squad", "version: 1.0.0", "slashPrefix: motio
   if (!manifestText.includes(token)) throw new Error(`Manifest schema requirement missing: ${token}`);
 }
 
+function runGatedBuild(options, counters) {
+  assertLayerableBuild(options);
+  counters.build += 1;
+  counters.render += 1;
+}
+
+const flattenedLayer = {
+  elementId: "styleframe-card",
+  requiresAnimation: true,
+  independentlyAddressable: true,
+  sourceKind: "FLATTENED_STYLEFRAME",
+  flattenedForeground: true
+};
+const flattenedManifest = buildAssetManifest({
+  assets: [{id: "styleframe", name: "styleframe"}],
+  layerMap: [{...flattenedLayer, source_asset_id: "styleframe"}]
+});
+assert.equal(missingCriticalLayers(flattenedManifest).length, 1, "A: flattened styleframe must be critical");
+const countersA = {build: 0, render: 0};
+assert.throws(
+  () => runGatedBuild({buildMode: "LAYERED_MOTION", layers: [flattenedLayer]}, countersA),
+  /Layerability Gate failed/
+);
+assert.deepEqual(countersA, {build: 0, render: 0}, "A: blocked styleframe must not build or render");
+
+const countersB = {build: 0, render: 0};
+assert.throws(
+  () => runGatedBuild({buildMode: "LAYERED_MOTION", templateId: "three", layers: [flattenedLayer]}, countersB),
+  /Layerability Gate failed/
+);
+assert.deepEqual(countersB, {build: 0, render: 0}, "B: Three must not bypass Layerability");
+
+assert.doesNotThrow(() => assertLayerableBuild({
+  buildMode: "LAYERED_MOTION",
+  layers: [
+    {elementId: "card-a", requiresAnimation: true, independentlyAddressable: true, sourceKind: "SOURCE_COMPONENT"},
+    {elementId: "cursor", requiresAnimation: true, independentlyAddressable: true, sourceKind: "SVG"}
+  ]
+}), "C: independent assets should build");
+
+assert.doesNotThrow(() => assertLayerableBuild({
+  buildMode: "LAYERED_MOTION",
+  layers: [{elementId: "headline", requiresAnimation: true, independentlyAddressable: true, sourceKind: "REACT", reconstructed: true}]
+}), "D: materialized reconstruction should build");
+
+assert.throws(
+  () => assertLayerableBuild({buildMode: "FLAT_MOTION_ALLOWED", layers: [flattenedLayer]}),
+  /explicit user authorization/
+);
+assert.doesNotThrow(() => assertLayerableBuild({
+  buildMode: "FLAT_MOTION_ALLOWED",
+  explicitFlatMotionAuthorization: true,
+  layers: [flattenedLayer]
+}), "E: explicitly authorized flat motion may continue");
+
+const repositoryManifest = buildAssetManifest({
+  assets: [],
+  repositoryAssets: [{id: "whatsapp-card", name: "whatsapp-card", source: "repo/components/whatsapp-card.svg"}],
+  layerMap: [{elementId: "whatsapp", source_asset_id: "whatsapp-card", requiresAnimation: true, independently_addressable: true, source_kind: "SVG"}]
+});
+assert.equal(repositoryManifest[0].asset?.id, "whatsapp-card", "F: repository assets must be found before requesting upload");
+assert.equal(missingCriticalLayers(repositoryManifest).length, 0, "F: existing repository asset must not be missing");
+
 console.log("Motion Squad structural validation passed (AIOX task-first + layerability gates)");
+console.log("Motion Squad adversarial validation passed (A-F layerability and asset gates)");
