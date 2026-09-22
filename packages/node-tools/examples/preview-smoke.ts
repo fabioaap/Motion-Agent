@@ -37,6 +37,17 @@ const context = JobContextSchema.parse({
   decomposition: {
     job_id: jobId,
     scene_id: "scene_01",
+    layerability_status: "LAYERED_READY",
+    layer_map_verified: true,
+    layer_map: [
+      {
+        element_id: "dashboard_base",
+        role: "animated_svg",
+        source_kind: "SVG",
+        independently_addressable: true,
+        source_asset_id: "dashboard"
+      }
+    ],
     elements: [
       {
         element_id: "dashboard_base",
@@ -93,7 +104,7 @@ const keyframes = visual.motion_keyframes as unknown[];
 const identity = visual.identity_mismatches as unknown[];
 const regressionMismatches = regression.mismatches as unknown[];
 
-assert.equal((result.metadata.preview_render as Record<string, unknown>).ok, true);
+assert.equal((result.metadata.preview_render as Record<string, unknown>).ok, true, JSON.stringify(result.metadata.preview_render));
 assert.ok(Array.isArray(keyframes) && keyframes.length >= 3, "Expected at least three motion keyframes");
 assert.deepEqual(identity, []);
 assert.deepEqual(regressionMismatches, []);
