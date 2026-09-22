@@ -30,6 +30,6 @@
     "installer:smoke": "node installer/smoke.mjs",
     "installer:package-smoke": "node installer/package-smoke.mjs",
     "skills:remotion": "node scripts/install-remotion-skills.mjs",
-    "squad:validate": "node scripts/validate-motion-squad.mjs"
+    "squad:validate": "node scripts/validate-motion-squad.mjs && node packages/runtime/node_modules/tsx/dist/cli.mjs packages/runtime/examples/layerability-adversarial.ts"
   }
 }

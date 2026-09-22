@@ -65,7 +65,7 @@ function safeSource(source: string, fallback: string): string {
 export function createSceneJob(context: JobContext): MotionSceneJob {
   if (requiresLayerability(context)) {
     const gate = assessLayerability(context);
-    if (!gate.pass) {
+    if (!gate.pass || gate.status === "RECONSTRUCTION_READY") {
       throw new Error("Component-motion scene cannot be created before the Layerability Gate passes");
     }
   }

@@ -40,6 +40,13 @@ workflow:
       agent: template-resolver
       action: Resolve the smallest official Remotion technical baseline.
 
+    - step: materialize-reconstruction
+      task: build-motion-scene.md
+      agent: remotion-builder
+      condition: layerability_status == RECONSTRUCTION_READY
+      action: Materialize each approved reconstruction as an independent React/SVG layer, update the Layer Map and asset manifest, then rerun the Layerability Gate before Remotion build.
+      terminal_status: WAITING_FOR_ASSETS
+
     - step: build
       task: build-motion-scene.md
       agent: remotion-builder

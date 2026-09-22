@@ -146,7 +146,8 @@ export const LayerMapEntrySchema = z.object({
   element_id: z.string().min(1),
   role: z.string().default(""),
   source_kind: LayerSourceKindSchema,
-  independently_addressable: z.boolean().default(false)
+  independently_addressable: z.boolean().default(false),
+  source_asset_id: z.string().min(1).optional()
 });
 export type LayerMapEntry = z.infer<typeof LayerMapEntrySchema>;
 

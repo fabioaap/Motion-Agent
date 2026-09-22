@@ -58,9 +58,9 @@ export function assessLayerability(context: JobContext): LayerabilityGateResult 
   if (flattened && !explicitFlatMotionAuthorization(context)) {
     return {
       pass: false,
-      status: "FLAT_MOTION_ONLY",
-      reasons: ["The supplied scene is flattened; explicit authorization is required for an animatic/flat motion treatment"],
-      missingAssets,
+      status: "BLOCKED_MISSING_ASSETS",
+      reasons: ["The supplied scene is flattened; component motion requires independent assets or explicit flat-motion authorization"],
+      missingAssets: animated.map((element) => element.name),
       reconstructableElements
     };
   }
@@ -87,20 +87,49 @@ export function assessLayerability(context: JobContext): LayerabilityGateResult 
 
   const assets = new Map((context.assets?.assets ?? []).map((asset) => [asset.asset_id, asset]));
   const layers = new Map(decomposition.layer_map.map((layer) => [layer.element_id, layer]));
+  const reconstructionReceipts = new Map<string, string>();
+  if (Array.isArray(context.metadata.reconstruction_receipts)) {
+    for (const receipt of context.metadata.reconstruction_receipts) {
+      if (receipt && typeof receipt === "object" && "element_id" in receipt && "asset_id" in receipt &&
+          typeof receipt.element_id === "string" && typeof receipt.asset_id === "string") {
+        reconstructionReceipts.set(receipt.element_id, receipt.asset_id);
+      }
+    }
+  }
   for (const element of animated) {
     const asset = assets.get(element.source_asset_id);
     const layer = layers.get(element.element_id);
+    const canReconstruct = element.reconstruction_allowed &&
+      ["REBUILD_REACT", "REBUILD_SVG"].includes(element.strategy) &&
+      layer?.source_kind !== "FLATTENED_STYLEFRAME";
+    const reconstructionAssetId = reconstructionReceipts.get(element.element_id);
     if (!asset) missingAssets.push(`${element.name} (${element.source_asset_id})`);
     if (!layer) {
-      missingAssets.push(`${element.name} Layer Map entry`);
+      if (canReconstruct && !reconstructionAssetId) {
+        reconstructableElements.push(element.element_id);
+      } else {
+        missingAssets.push(`${element.name} Layer Map entry`);
+      }
+      continue;
+    }
+    if (canReconstruct && !reconstructionAssetId) {
+      reconstructableElements.push(element.element_id);
       continue;
     }
     if (!layer.independently_addressable || layer.source_kind === "FLATTENED_STYLEFRAME") {
-      const canReconstruct = element.reconstruction_allowed &&
-        ["REBUILD_REACT", "REBUILD_SVG"].includes(element.strategy) &&
-        layer.source_kind !== "FLATTENED_STYLEFRAME";
-      if (canReconstruct && layer.independently_addressable) reconstructableElements.push(element.element_id);
-      else reasons.push(`Animated element ${element.element_id} is not independently addressable`);
+      reasons.push(`Animated element ${element.element_id} is not independently addressable`);
+      continue;
+    }
+    if (element.strategy === "REBUILD_REACT" && layer.source_kind !== "REACT") {
+      reasons.push(`Reconstruction receipt for ${element.element_id} has no React layer`);
+    }
+    if (element.strategy === "REBUILD_SVG" && layer.source_kind !== "SVG") {
+      reasons.push(`Reconstruction receipt for ${element.element_id} has no SVG layer`);
+    }
+    if (canReconstruct && reconstructionAssetId &&
+        (reconstructionAssetId !== element.source_asset_id ||
+          reconstructionAssetId !== layer.source_asset_id || !assets.has(reconstructionAssetId))) {
+      reasons.push(`Reconstruction receipt for ${element.element_id} does not reference its independent output asset`);
     }
   }
 

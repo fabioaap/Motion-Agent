@@ -114,6 +114,12 @@ try {
   ) {
     throw new Error("Installed Motion Squad does not gate missing assets before build");
   }
+  if (
+    squadWorkflow.indexOf("step: materialize-reconstruction") < 0 ||
+    squadWorkflow.indexOf("step: materialize-reconstruction") > squadWorkflow.indexOf("step: build")
+  ) {
+    throw new Error("Installed Motion Squad does not materialize reconstructions before build");
+  }
   if (!missingAssetsTask.includes("WAITING_FOR_ASSETS") || !missingAssetsTask.includes("HARD STOP")) {
     throw new Error("Installed Motion Squad does not hard-stop when assets are missing");
   }

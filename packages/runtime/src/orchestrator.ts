@@ -99,6 +99,8 @@ export class MotionOrchestrator {
     while (true) {
       qaCycles += 1;
       context.metadata = {...context.metadata, qa_cycle: qaCycles};
+      context = await this.materializeReconstructions(context, machine);
+      if (context.state === "HUMAN_INPUT_REQUIRED") return context;
       context = await this.build(context, machine);
       context = this.setState(context, machine, "PREVIEW_READY");
       if (this.previewHook) {
@@ -327,12 +329,24 @@ export class MotionOrchestrator {
   }
 
   private recordLayerabilityGate(context: JobContext, gate: LayerabilityGateResult): JobContext {
+    const metadata: Record<string, unknown> = {...context.metadata, layerability_gate: gate};
+    if (gate.pass && gate.status === "FLAT_MOTION_ONLY") {
+      metadata.build_mode = "FLAT_MOTION_ALLOWED";
+    } else if (gate.pass && gate.status === "LAYERED_READY") {
+      metadata.build_mode = "LAYERED_MOTION";
+    } else {
+      delete metadata.build_mode;
+    }
+    if (gate.pass) {
+      delete metadata.workflow_status;
+      delete metadata.hard_stop;
+      delete metadata.asset_request;
+    }
+
     return JobContextSchema.parse({
       ...context,
       metadata: {
-        ...context.metadata,
-        layerability_gate: gate,
-        build_mode: gate.status === "FLAT_MOTION_ONLY" ? "FLAT_MOTION_ALLOWED" : "LAYERED_MOTION",
+        ...metadata,
         ...(gate.pass ? {} : {
           workflow_status: gate.status === "FLAT_MOTION_ONLY"
             ? "WAITING_FOR_USER_DECISION"
@@ -346,9 +360,52 @@ export class MotionOrchestrator {
 
   private assertLayerabilityGate(context: JobContext): void {
     const gate = assessLayerability(context);
-    if (!gate.pass) {
+    if (!gate.pass || gate.status === "RECONSTRUCTION_READY") {
       throw new Error(`Layerability Gate failed (${gate.status}): ${gate.reasons.join("; ")}`);
     }
+  }
+
+  private async materializeReconstructions(
+    context: JobContext,
+    machine: MotionStateMachine
+  ): Promise<JobContext> {
+    let gate = assessLayerability(context);
+    if (gate.status !== "RECONSTRUCTION_READY") return context;
+    const requestedReconstruction = [...gate.reconstructableElements];
+    const specialists = new Set<AgentName>();
+
+    for (const elementId of requestedReconstruction) {
+      const element = context.decomposition?.elements.find((item) => item.element_id === elementId);
+      if (!element) continue;
+      const specialist: AgentName | undefined = element.strategy === "REBUILD_REACT"
+        ? "ui_react_specialist"
+          : element.strategy === "REBUILD_SVG"
+            ? "svg_motion_specialist"
+            : undefined;
+      if (specialist && this.agents.has(specialist)) specialists.add(specialist);
+    }
+
+    for (const specialist of specialists) {
+      const result = await this.agents.get(specialist).run(structuredClone(context));
+      context = this.mergeContext(context, result.context);
+    }
+
+    gate = assessLayerability(context);
+    if (!gate.pass || gate.status === "RECONSTRUCTION_READY") {
+      const failed: LayerabilityGateResult = {
+        ...gate,
+        pass: false,
+        status: "BLOCKED_MISSING_ASSETS",
+        missingAssets: requestedReconstruction.map((id) =>
+          context.decomposition?.elements.find((element) => element.element_id === id)?.name ?? id
+        ),
+        reasons: [...gate.reasons, "Reconstruction did not produce verified independent layers before build"]
+      };
+      context = this.recordLayerabilityGate(context, failed);
+      return this.setState(context, machine, "HUMAN_INPUT_REQUIRED");
+    }
+
+    return this.recordLayerabilityGate(context, gate);
   }
 
   private needsSourceResolution(context: JobContext): boolean {

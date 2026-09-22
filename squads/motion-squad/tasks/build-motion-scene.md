@@ -104,3 +104,5 @@ atomic_layer: Media
 **Execution Rule:**
 
 HARD FAIL if the scene is not layer-ready. Do not downgrade silently to flattened slide animation.
+
+For RECONSTRUCTION_READY, materialize each approved React/SVG layer before invoking the Remotion builder. Update the independent Layer Map entry with its `source_asset_id`, add the output to the asset manifest, and record `{element_id, asset_id}` in `metadata.reconstruction_receipts`; rerun the Layerability Gate. If the receipt or independent output asset is absent, enter WAITING_FOR_ASSETS and do not build.

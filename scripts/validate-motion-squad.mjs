@@ -1,7 +1,8 @@
-import {access, readFile} from "node:fs/promises";
+import {access, mkdir, mkdtemp, readFile, rm, writeFile} from "node:fs/promises";
 import assert from "node:assert/strict";
 import {join, resolve} from "node:path";
-import {buildAssetManifest, missingCriticalLayers} from "../squads/motion-squad/tools/asset-manifest-reader.js";
+import {tmpdir} from "node:os";
+import {buildAssetManifest, findRepositoryAsset, missingCriticalLayers} from "../squads/motion-squad/tools/asset-manifest-reader.js";
 import {assertLayerableBuild} from "../squads/motion-squad/tools/remotion-runtime.js";
 
 const root = resolve(process.cwd(), "squads", "motion-squad");
@@ -124,9 +125,13 @@ for (const block of stepBlocks) {
   }
 }
 const missingIndex = workflow.indexOf("step: missing-assets");
+const reconstructionIndex = workflow.indexOf("step: materialize-reconstruction");
 const buildIndex = workflow.indexOf("step: build");
 if (missingIndex < 0 || buildIndex < 0 || missingIndex > buildIndex) {
   throw new Error("Missing Assets Gate must occur before build");
+}
+if (reconstructionIndex < 0 || reconstructionIndex > buildIndex) {
+  throw new Error("Materialized reconstruction must be verified before build");
 }
 
 const policy = JSON.parse(await readFile(join(root, "data", "motion-policy.json"), "utf8"));
@@ -197,13 +202,23 @@ assert.doesNotThrow(() => assertLayerableBuild({
   layers: [flattenedLayer]
 }), "E: explicitly authorized flat motion may continue");
 
-const repositoryManifest = buildAssetManifest({
-  assets: [],
-  repositoryAssets: [{id: "whatsapp-card", name: "whatsapp-card", source: "repo/components/whatsapp-card.svg"}],
-  layerMap: [{elementId: "whatsapp", source_asset_id: "whatsapp-card", requiresAnimation: true, independently_addressable: true, source_kind: "SVG"}]
-});
-assert.equal(repositoryManifest[0].asset?.id, "whatsapp-card", "F: repository assets must be found before requesting upload");
-assert.equal(missingCriticalLayers(repositoryManifest).length, 0, "F: existing repository asset must not be missing");
+const assetFixture = await mkdtemp(join(tmpdir(), "motion-agent-asset-discovery-"));
+try {
+  const existingAssetPath = join(assetFixture, "src", "components", "whatsapp-card.svg");
+  await mkdir(join(assetFixture, "src", "components"), {recursive: true});
+  await writeFile(existingAssetPath, "<svg />\n");
+  const foundAsset = await findRepositoryAsset(assetFixture, "whatsapp-card.svg");
+  assert.ok(foundAsset, "F: repository scan must find an existing independent asset");
+  const repositoryManifest = buildAssetManifest({
+    assets: [],
+    repositoryAssets: [foundAsset],
+    layerMap: [{elementId: "whatsapp", source_asset_id: foundAsset.id, requiresAnimation: true, independently_addressable: true, source_kind: "SVG"}]
+  });
+  assert.equal(repositoryManifest[0].asset?.id, foundAsset.id, "F: use the discovered repository asset before requesting upload");
+  assert.equal(missingCriticalLayers(repositoryManifest).length, 0, "F: existing repository asset must not be missing");
+} finally {
+  await rm(assetFixture, {recursive: true, force: true});
+}
 
 console.log("Motion Squad structural validation passed (AIOX task-first + layerability gates)");
 console.log("Motion Squad adversarial validation passed (A-F layerability and asset gates)");

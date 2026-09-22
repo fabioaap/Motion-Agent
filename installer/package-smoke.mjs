@@ -5,15 +5,18 @@ import {tmpdir} from "node:os";
 import {fileURLToPath} from "node:url";
 
 const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
+const pnpmCli = process.env.MOTION_AGENT_PNPM_CLI;
+const lockfile = join(repoRoot, "pnpm-lock.yaml");
 const temp = await mkdtemp(join(tmpdir(), "motion-agent-package-"));
 const packDir = join(temp, "pack");
 const target = join(temp, "target");
 
 function run(command, args, cwd) {
-  const result = spawnSync(command, args, {
+  const usePinnedCli = command === "pnpm" && pnpmCli;
+  const result = spawnSync(usePinnedCli ? process.execPath : command, usePinnedCli ? [pnpmCli, ...args] : args, {
     cwd,
     encoding: "utf8",
-    shell: process.platform === "win32"
+    shell: !usePinnedCli && process.platform === "win32"
   });
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(" ")} failed\n${result.stdout}\n${result.stderr}`);
@@ -24,6 +27,8 @@ function run(command, args, cwd) {
 async function exists(path) {
   try { await access(path); return true; } catch { return false; }
 }
+
+const lockfileExistedBefore = await exists(lockfile);
 
 try {
   await mkdir(packDir, {recursive: true});
@@ -75,6 +80,10 @@ try {
     squadWorkflow.indexOf("step: missing-assets") < 0 ||
     squadWorkflow.indexOf("step: missing-assets") > squadWorkflow.indexOf("step: build")
   ) throw new Error("Packaged Motion Squad missing assets gate ordering");
+  if (
+    squadWorkflow.indexOf("step: materialize-reconstruction") < 0 ||
+    squadWorkflow.indexOf("step: materialize-reconstruction") > squadWorkflow.indexOf("step: build")
+  ) throw new Error("Packaged Motion Squad does not materialize reconstruction before build");
   if (!missingAssetsTask.includes("WAITING_FOR_ASSETS") || !missingAssetsTask.includes("HARD STOP")) {
     throw new Error("Packaged Motion Squad missing WAITING_FOR_ASSETS hard stop");
   }
@@ -105,4 +114,5 @@ try {
   console.log(`Packaged installer smoke test passed: ${tarballs[0]}`);
 } finally {
   await rm(temp, {recursive: true, force: true});
+  if (!lockfileExistedBefore) await rm(lockfile, {force: true});
 }
