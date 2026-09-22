@@ -54,6 +54,7 @@ try {
   }
 
   const manifest = JSON.parse(await readFile(join(target, ".motion", "install-manifest.json"), "utf8"));
+  if (manifest.schemaVersion !== 2 || !manifest.managedFiles?.length) throw new Error("Packaged installer has no file-level ownership manifest");
   if (manifest.installerVersion !== "0.6.0") throw new Error(`Unexpected installer version ${manifest.installerVersion}`);
   if (manifest.pipelineVersion !== "aiox-motion-squad-v1") throw new Error(`Unexpected pipeline version ${manifest.pipelineVersion}`);
 
@@ -79,10 +80,28 @@ try {
   }
 
   run("pnpm", ["dlx", tarball, "doctor", "--target", target, "--json"], repoRoot);
+  const configPath = join(target, ".motion", "config.json");
+  const config = JSON.parse(await readFile(configPath, "utf8"));
+  config.userOwnedSetting = "keep-me";
+  await writeFile(configPath, JSON.stringify(config, null, 2) + "\n");
+  const skillNote = join(target, ".agents", "skills", "motion-orchestrator", "user-notes.md");
+  const squadNote = join(target, "squads", "motion-squad", "user-notes.md");
+  await writeFile(skillNote, "User-owned skill file.\n");
+  await writeFile(squadNote, "User-owned Squad file.\n");
   run("pnpm", ["dlx", tarball, "uninstall", "--target", target], repoRoot);
 
-  if (await exists(join(target, ".motion"))) throw new Error("Packaged uninstall left .motion behind");
-  if (await exists(join(target, "squads", "motion-squad"))) throw new Error("Packaged uninstall left Motion Squad behind");
+  if (JSON.parse(await readFile(configPath, "utf8")).userOwnedSetting !== "keep-me") {
+    throw new Error("Packaged uninstall deleted or reset user config");
+  }
+  if (!(await exists(skillNote)) || !(await exists(squadNote))) {
+    throw new Error("Packaged uninstall deleted user-owned skill or Squad files");
+  }
+  if (await exists(join(target, ".agents", "skills", "template-resolver"))) {
+    throw new Error("Packaged uninstall left an unchanged managed skill");
+  }
+  if (await exists(join(target, "squads", "motion-squad", "squad.yaml"))) {
+    throw new Error("Packaged uninstall left an unchanged managed Squad file");
+  }
   console.log(`Packaged installer smoke test passed: ${tarballs[0]}`);
 } finally {
   await rm(temp, {recursive: true, force: true});

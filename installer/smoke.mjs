@@ -20,11 +20,34 @@ function run(args) {
   return result.stdout;
 }
 
+function runExpectFailure(args, message) {
+  const result = spawnSync(process.execPath, [cli, ...args], {encoding: "utf8"});
+  if (result.status === 0 || !(result.stderr + result.stdout).includes(message)) {
+    throw new Error("Expected installer to fail with: " + message);
+  }
+}
+
 try {
   await import("node:fs/promises").then(({mkdir}) => mkdir(target, {recursive: true}));
+  const conflictTarget = join(root, "host-with-existing-motion-skill");
+  const conflictSkill = join(conflictTarget, ".agents", "skills", "motion-orchestrator", "SKILL.md");
+  await import("node:fs/promises").then(({mkdir}) => mkdir(join(conflictTarget, ".agents", "skills", "motion-orchestrator"), {recursive: true}));
+  await writeFile(conflictSkill, "User-owned skill; must not be overwritten.\n");
+  runExpectFailure(
+    ["init", "--target", conflictTarget, "--skip-install", "--skip-remotion-skills"],
+    "Refusing to overwrite existing unmanaged path"
+  );
+  if ((await readFile(conflictSkill, "utf8")) !== "User-owned skill; must not be overwritten.\n") {
+    throw new Error("init overwrote an existing user-owned skill");
+  }
+  if (await exists(join(conflictTarget, ".motion"))) {
+    throw new Error("init partially wrote Motion Agent files before detecting a path conflict");
+  }
   await writeFile(join(target, "package.json"), `${JSON.stringify({name: "host-project", private: true, scripts: {test: "echo ok"}}, null, 2)}\n`);
   await writeFile(join(target, "AGENTS.md"), "# Existing project instructions\n\nKeep this text.\n");
   await writeFile(join(target, ".gitignore"), "node_modules/\n");
+  await import("node:fs/promises").then(({mkdir}) => mkdir(join(target, ".agents", "skills", "other-empty-skill"), {recursive: true}));
+  await import("node:fs/promises").then(({mkdir}) => mkdir(join(target, "squads", "other-empty-squad"), {recursive: true}));
 
   run(["init", "--target", target, "--skip-install", "--skip-remotion-skills"]);
 
@@ -122,13 +145,29 @@ try {
     throw new Error("update did not merge Template Resolution defaults into existing config");
   }
 
+  postUpdateConfig.userOwnedSetting = "preserve-after-uninstall";
+  await writeFile(configPath, JSON.stringify(postUpdateConfig, null, 2) + "\n");
   await writeFile(join(target, ".motion", "user-owned.txt"), "must survive uninstall\n");
+  const modifiedSkillPath = join(target, ".agents", "skills", "motion-orchestrator", "SKILL.md");
+  const modifiedSkill = (await readFile(modifiedSkillPath, "utf8")) + "\nUser customization; preserve on uninstall.\n";
+  await writeFile(modifiedSkillPath, modifiedSkill);
+  const extraSkillFile = join(target, ".agents", "skills", "motion-orchestrator", "user-notes.md");
+  await writeFile(extraSkillFile, "User-owned skill note.\n");
+  const extraSquadFile = join(target, "squads", "motion-squad", "user-notes.md");
+  await writeFile(extraSquadFile, "User-owned squad note.\n");
 
   run(["uninstall", "--target", target]);
 
   if (!(await exists(join(target, ".motion", "user-owned.txt")))) throw new Error("uninstall deleted an unrelated .motion file");
-  if (await exists(join(target, ".agents", "skills", "motion-orchestrator"))) throw new Error("custom skill still exists after uninstall");
-  if (await exists(join(target, "squads", "motion-squad"))) throw new Error("Motion Squad still exists after uninstall");
+  const preservedConfig = JSON.parse(await readFile(configPath, "utf8"));
+  if (preservedConfig.userOwnedSetting !== "preserve-after-uninstall") throw new Error("uninstall deleted or reset user config");
+  if ((await readFile(modifiedSkillPath, "utf8")) !== modifiedSkill) throw new Error("uninstall deleted a user-modified managed skill");
+  if (!(await exists(extraSkillFile))) throw new Error("uninstall deleted an extra user skill file");
+  if (!(await exists(extraSquadFile))) throw new Error("uninstall deleted an extra user Squad file");
+  if (!(await exists(join(target, ".agents", "skills", "other-empty-skill")))) throw new Error("uninstall deleted an unrelated empty skill directory");
+  if (!(await exists(join(target, "squads", "other-empty-squad")))) throw new Error("uninstall deleted an unrelated empty Squad directory");
+  if (await exists(join(target, ".agents", "skills", "template-resolver"))) throw new Error("uninstall left an unchanged managed skill");
+  if (await exists(join(target, "squads", "motion-squad", "squad.yaml"))) throw new Error("uninstall left an unchanged managed Squad file");
   const afterAgents = await readFile(join(target, "AGENTS.md"), "utf8");
   if (!afterAgents.includes("Existing project instructions") || afterAgents.includes("motion-agent:start")) {
     throw new Error("AGENTS.md cleanup failed");

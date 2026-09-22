@@ -431,7 +431,7 @@ Never commit provider credentials.
 
 ## Safety and ownership
 
-The installer uses managed blocks and a manifest so it does not take ownership of unrelated project files. Existing `AGENTS.md`, `.gitignore` and package scripts are preserved outside Motion Agent-managed content.
+The installer records SHA-256 ownership for each packaged file. Updates merge packaged files without deleting user additions; uninstall removes only unchanged managed files and preserves modified files, user configuration and unrelated files/directories. Existing `AGENTS.md`, `.gitignore` and package scripts are preserved outside Motion Agent-managed content.
 
 Generated outputs such as Remotion renders, temporary jobs, caches and installed dependencies are ignored by git by default.
 

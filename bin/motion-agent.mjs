@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import {access, cp, mkdir, readFile, readdir, rm, writeFile} from "node:fs/promises";
+import {access, cp, mkdir, readFile, readdir, rm, rmdir, writeFile} from "node:fs/promises";
+import {createHash} from "node:crypto";
 import {spawnSync} from "node:child_process";
 import {dirname, join, resolve} from "node:path";
 import {fileURLToPath} from "node:url";
@@ -14,6 +15,7 @@ const GITIGNORE_START = "# motion-agent:start";
 const GITIGNORE_END = "# motion-agent:end";
 const CUSTOM_SKILLS = ["motion-orchestrator", "template-resolver", "asset-fidelity", "scene-director", "motion-qa"];
 const AIOX_SQUAD_NAME = "motion-squad";
+const toPosix = (path) => path.replaceAll("\\", "/");
 
 function usage() {
   console.log(`Motion Agent ${VERSION}\n\nUsage:\n  motion-agent init [--target <dir>] [--skip-install] [--skip-remotion-skills] [--force]\n  motion-agent update [--target <dir>] [--skip-install] [--skip-remotion-skills]\n  motion-agent doctor [--target <dir>] [--deep] [--json]\n  motion-agent uninstall [--target <dir>]\n  motion-agent version\n\nRecommended from another repository:\n  pnpm dlx github:fabioaap/Motion-Agent init\n`);
@@ -54,12 +56,14 @@ async function listFiles(root, prefix = "") {
   return files;
 }
 
-async function removeEmptyDirectories(root) {
-  if (!(await exists(root))) return;
-  for (const entry of await readdir(root, {withFileTypes: true})) {
-    if (entry.isDirectory()) await removeEmptyDirectories(join(root, entry.name));
+async function removeDirectoryIfEmpty(path) {
+  if (await exists(path) && (await readdir(path)).length === 0) {
+    await rmdir(path);
   }
-  if ((await readdir(root)).length === 0) await rm(root, {recursive: true, force: true});
+}
+
+async function fileHash(path) {
+  return createHash("sha256").update(await readFile(path)).digest("hex");
 }
 
 async function readText(path, fallback = "") {
@@ -129,7 +133,6 @@ async function copyCustomSkills(target) {
   for (const skill of CUSTOM_SKILLS) {
     const source = join(sourceRoot, skill);
     if (!(await exists(source))) throw new Error(`Packaged skill missing: ${skill}`);
-    await rm(join(destRoot, skill), {recursive: true, force: true});
     await cp(source, join(destRoot, skill), {recursive: true});
   }
 }
@@ -139,8 +142,23 @@ async function copyAioxSquad(target) {
   const dest = join(target, "squads", AIOX_SQUAD_NAME);
   if (!(await exists(source))) throw new Error(`Packaged AIOX squad missing: ${AIOX_SQUAD_NAME}`);
   await mkdir(join(target, "squads"), {recursive: true});
-  await rm(dest, {recursive: true, force: true});
   await cp(source, dest, {recursive: true});
+}
+
+async function ensureArtifactPathsManaged(target) {
+  const manifestPath = join(target, ".motion", "install-manifest.json");
+  const manifest = JSON.parse(await readText(manifestPath, "{}"));
+  const managedPaths = new Set(Array.isArray(manifest.managedPaths) ? manifest.managedPaths : []);
+  const paths = [
+    ...CUSTOM_SKILLS.map((skill) => ".agents/skills/" + skill),
+    "squads/" + AIOX_SQUAD_NAME
+  ];
+
+  for (const path of paths) {
+    if (await exists(join(target, path)) && !managedPaths.has(path)) {
+      throw new Error("Refusing to overwrite existing unmanaged path: " + path);
+    }
+  }
 }
 
 function mergeConfigDefaults(defaults, existing) {
@@ -179,14 +197,39 @@ async function copyMotionTemplate(target, preserveConfig = true) {
   }
 }
 
+async function collectManagedFiles(target, templateRoot) {
+  const sourceTrees = [
+    {source: templateRoot, destination: join(target, ".motion"), destinationPath: ".motion"},
+    ...CUSTOM_SKILLS.map((skill) => ({
+      source: join(PACKAGE_ROOT, "skills", "custom", skill),
+      destination: join(target, ".agents", "skills", skill),
+      destinationPath: ".agents/skills/" + skill
+    })),
+    {
+      source: join(PACKAGE_ROOT, "squads", AIOX_SQUAD_NAME),
+      destination: join(target, "squads", AIOX_SQUAD_NAME),
+      destinationPath: "squads/" + AIOX_SQUAD_NAME
+    }
+  ];
+  const managedFiles = [];
+  for (const tree of sourceTrees) {
+    for (const relativePath of await listFiles(tree.source)) {
+      const path = tree.destinationPath + "/" + relativePath;
+      managedFiles.push({path, sha256: await fileHash(join(tree.destination, relativePath))});
+    }
+  }
+  return managedFiles;
+}
+
 async function writeManifest(target) {
   const templateRoot = join(PACKAGE_ROOT, "installer", "template", "motion");
   const managedMotionFiles = [
     ...await listFiles(templateRoot),
     "install-manifest.json"
   ].map((path) => `.motion/${path}`);
+  const managedFiles = await collectManagedFiles(target, templateRoot);
   const manifest = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     installerVersion: VERSION,
     pipelineVersion: PIPELINE_VERSION,
     mode: "codex",
@@ -197,6 +240,7 @@ async function writeManifest(target) {
       ...CUSTOM_SKILLS.map((name) => `.agents/skills/${name}`)
     ],
     managedMotionFiles,
+    managedFiles,
     officialRemotionSkills: "remotion-dev/skills",
     officialRemotionTemplates: {
       catalog: "https://www.remotion.dev/templates",
@@ -247,6 +291,7 @@ async function init(target, flags, updating = false) {
     throw new Error("A .motion directory already exists and is not managed by Motion Agent. Use --force only after reviewing it.");
   }
 
+  await ensureArtifactPathsManaged(target);
   await copyMotionTemplate(target, updating);
   await copyCustomSkills(target);
   await copyAioxSquad(target);
@@ -319,18 +364,73 @@ async function doctor(target, flags) {
 }
 
 async function uninstall(target) {
-  for (const skill of CUSTOM_SKILLS) {
-    await rm(join(target, ".agents", "skills", skill), {recursive: true, force: true});
-  }
-  await rm(join(target, "squads", AIOX_SQUAD_NAME), {recursive: true, force: true});
   const motionRoot = join(target, ".motion");
   const manifest = JSON.parse(await readText(join(motionRoot, "install-manifest.json"), "{}"));
+  const installedPaths = new Set();
+  const allowedPrefixes = [".motion/", ".agents/skills/", "squads/" + AIOX_SQUAD_NAME + "/"];
+  const managedFiles = Array.isArray(manifest.managedFiles) ? manifest.managedFiles : [];
+  for (const entry of managedFiles) {
+    const path = typeof entry?.path === "string" ? toPosix(entry.path) : "";
+    if (
+      path.startsWith("/") ||
+      path.split("/").includes("..") ||
+      !allowedPrefixes.some((prefix) => path.startsWith(prefix))
+    ) continue;
+    installedPaths.add(path);
+    const absolutePath = join(target, ...path.split("/"));
+    if (!(await exists(absolutePath))) continue;
+    if (typeof entry.sha256 === "string" && await fileHash(absolutePath) === entry.sha256) {
+      await rm(absolutePath, {force: true});
+    } else {
+      console.log("Preserved modified managed file: " + path);
+    }
+  }
   const managedMotionFiles = Array.isArray(manifest.managedMotionFiles)
-    ? manifest.managedMotionFiles.filter((path) => path.startsWith(".motion/") && !path.includes(".."))
+    ? manifest.managedMotionFiles.filter((path) => path.startsWith(".motion/") && !path.split("/").includes(".."))
     : [];
-  for (const path of managedMotionFiles) await rm(join(target, path), {force: true});
-  await removeEmptyDirectories(motionRoot);
-  if (!managedMotionFiles.length && await exists(motionRoot)) {
+  for (const path of managedMotionFiles) {
+    if (path.endsWith("install-manifest.json") || installedPaths.has(path)) continue;
+    const absolutePath = join(target, ...path.split("/"));
+    if (!(await exists(absolutePath))) continue;
+    const sourcePath = join(PACKAGE_ROOT, "installer", "template", "motion", ...path.slice(".motion/".length).split("/"));
+    if (await exists(sourcePath) && await fileHash(absolutePath) === await fileHash(sourcePath)) {
+      await rm(absolutePath, {force: true});
+    } else if (path.endsWith("config.json")) {
+      console.log("Preserved .motion/config.json because ownership cannot be verified for this older install.");
+    }
+  }
+  if (managedFiles.length === 0) {
+    const legacyTrees = [
+      ...CUSTOM_SKILLS.map((skill) => ({
+        source: join(PACKAGE_ROOT, "skills", "custom", skill),
+        destination: join(target, ".agents", "skills", skill)
+      })),
+      {
+        source: join(PACKAGE_ROOT, "squads", AIOX_SQUAD_NAME),
+        destination: join(target, "squads", AIOX_SQUAD_NAME)
+      }
+    ];
+    for (const tree of legacyTrees) {
+      if (!(await exists(tree.source)) || !(await exists(tree.destination))) continue;
+      for (const relativePath of await listFiles(tree.source)) {
+        const installedPath = join(tree.destination, relativePath);
+        if (
+          await exists(installedPath) &&
+          await fileHash(installedPath) === await fileHash(join(tree.source, relativePath))
+        ) await rm(installedPath, {force: true});
+      }
+    }
+  }
+  await rm(join(motionRoot, "install-manifest.json"), {force: true});
+  await removeDirectoryIfEmpty(motionRoot);
+  for (const skill of CUSTOM_SKILLS) {
+    await removeDirectoryIfEmpty(join(target, ".agents", "skills", skill));
+  }
+  await removeDirectoryIfEmpty(join(target, ".agents", "skills"));
+  await removeDirectoryIfEmpty(join(target, ".agents"));
+  await removeDirectoryIfEmpty(join(target, "squads", AIOX_SQUAD_NAME));
+  await removeDirectoryIfEmpty(join(target, "squads"));
+  if (await exists(motionRoot)) {
     console.log("Preserved unmanaged .motion files; remove them only after reviewing ownership.");
   }
   await removeManagedBlock(join(target, "AGENTS.md"), MANAGED_START, MANAGED_END);
