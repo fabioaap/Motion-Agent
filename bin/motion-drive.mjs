@@ -110,8 +110,9 @@ export class DriveClient {
     }
     const boundary = "motion_" + checksum.slice(0, 24);
     const metadata = {name, parents: [parent], mimeType, description: "sha256:" + checksum};
-    const header = Buffer.from("--" + boundary + "\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n" + JSON.stringify(metadata) + "\r\n--" + boundary + "\r\nContent-Type: " + mimeType + "\r\n\r\n");
-    const footer = Buffer.from("\r\n--" + boundary + "--\r\n");
+    const CRLF = "\r\n";
+    const header = Buffer.from(["--" + boundary, "Content-Type: application/json; charset=UTF-8", "", JSON.stringify(metadata), "--" + boundary, "Content-Type: " + mimeType, "", ""].join(CRLF));
+    const footer = Buffer.from(CRLF + "--" + boundary + "--" + CRLF);
     return this.request(UPLOAD + "/files?uploadType=multipart&fields=id,name,mimeType,webViewLink,description", {method: "POST", contentType: "multipart/related; boundary=" + boundary, body: Buffer.concat([header, bytes, footer])});
   }
   async replaceManifest(fileId, manifest) {
