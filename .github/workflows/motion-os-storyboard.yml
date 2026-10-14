@@ -1,6 +1,7 @@
 name: Motion OS POC-001 storyboard render
 
 on:
+  # Render only on manual dispatch; avoid consuming minutes on code pushes.
   workflow_dispatch:
     inputs:
       quality:
@@ -11,15 +12,6 @@ on:
         options:
           - review
           - draft
-  push:
-    branches:
-      - feat/aiox-motion-os-drive-first
-    paths:
-      - "apps/remotion-studio/src/MotionOsStoryboard.tsx"
-      - "apps/remotion-studio/src/Root.tsx"
-      - ".github/workflows/motion-os-storyboard.yml"
-      - "scripts/verify-motion-os-render.py"
-
 permissions:
   contents: read
 
@@ -29,6 +21,7 @@ concurrency:
 
 jobs:
   animatic:
+    if: github.ref == 'refs/heads/feat/aiox-motion-os-drive-first'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -37,6 +30,22 @@ jobs:
     steps:
       - name: Check out the isolated feature branch
         uses: actions/checkout@v4
+
+      - name: Verify private Drive delivery configuration before rendering
+        shell: bash
+        env:
+          MOTION_OS_DRIVE_FOLDER_ID: ${{ vars.MOTION_OS_DRIVE_FOLDER_ID }}
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
+        run: |
+          set -euo pipefail
+          for var in MOTION_OS_DRIVE_FOLDER_ID GOOGLE_OAUTH_CLIENT_ID GOOGLE_OAUTH_CLIENT_SECRET GOOGLE_OAUTH_REFRESH_TOKEN; do
+            if [ -z "${!var:-}" ]; then
+              echo "::error::Missing repository variable or secret: $var. See docs/motion-os-drive-runbook.md"
+              exit 1
+            fi
+          done
 
       - name: Set up Node 22
         uses: actions/setup-node@v4
@@ -89,13 +98,19 @@ jobs:
             -vf 'fps=1/3,scale=270:480:flags=lanczos,tile=5x1' \
             -frames:v 1 apps/remotion-studio/out/contact-sheet.png
 
-      - name: Upload render, QA report and contact sheet for human review
-        uses: actions/upload-artifact@v4
-        with:
-          name: motion-os-poc001-${{ env.RENDER_QUALITY }}-NOT-FOR-PUBLICATION
-          path: |
-            apps/remotion-studio/out/motion-os-poc001-storyboard.mp4
-            apps/remotion-studio/out/technical-qa.json
+      - name: Deliver MP4, QA and contact sheet directly to Google Drive
+        shell: bash
+        env:
+          MOTION_OS_DRIVE_FOLDER_ID: ${{ vars.MOTION_OS_DRIVE_FOLDER_ID }}
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
+          MOTION_WORKFLOW_ID: motion_os_poc001
+          MOTION_RENDER_QUALITY: ${{ env.RENDER_QUALITY }}
+        run: |
+          set -euo pipefail
+          node scripts/upload-motion-render-to-drive.mjs \
+            apps/remotion-studio/out/motion-os-poc001-storyboard.mp4 \
+            apps/remotion-studio/out/technical-qa.json \
             apps/remotion-studio/out/contact-sheet.png
-          retention-days: 14
-          if-no-files-found: error
+          echo 'Drive delivery verified. No GitHub Actions artifact created.'
