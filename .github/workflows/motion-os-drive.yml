@@ -1,0 +1,35 @@
+name: Motion OS Drive adapter tests
+
+on:
+  push:
+    branches:
+      - feat/aiox-motion-os-drive-first
+  pull_request:
+    paths:
+      - "bin/motion-drive.mjs"
+      - "tests/motion-drive.test.mjs"
+      - ".github/workflows/motion-os-drive.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-adapter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate JavaScript syntax
+        run: |
+          node --check bin/motion-drive.mjs
+          node --check tests/motion-drive.test.mjs
+      - name: Run Drive adapter unit and approval gate tests
+        run: node --test tests/motion-drive.test.mjs
+      - name: Check CLI doctor output without credentials
+        run: |
+          node bin/motion-drive.mjs doctor > doctor.json
+          node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync('doctor.json')); if(!d.node.startsWith('v22.')) process.exit(1); if(d.drive_oauth_token_present) process.exit(2);"
