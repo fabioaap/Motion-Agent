@@ -1,0 +1,42 @@
+name: Motion OS POC-001 storyboard render
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/aiox-motion-os-drive-first
+    paths:
+      - "apps/remotion-studio/src/MotionOsStoryboard.tsx"
+      - "apps/remotion-studio/src/Root.tsx"
+      - ".github/workflows/motion-os-storyboard.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  animatic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Enable pinned pnpm version
+        run: |
+          corepack enable
+          corepack pnpm --version
+      - name: Install Motion Agent dependencies
+        run: corepack pnpm install --no-frozen-lockfile
+      - name: Check storyboard TypeScript
+        run: corepack pnpm --filter @motion-agent/remotion-studio typecheck
+      - name: Render vertical storyboard animatic (non-publishable)
+        run: |
+          mkdir -p apps/remotion-studio/out
+          corepack pnpm --filter @motion-agent/remotion-studio exec remotion render src/index.ts MotionOsStoryboard out/motion-os-poc001-storyboard.mp4 --scale=0.5 --concurrency=2
+      - name: Upload storyboard for human review
+        uses: actions/upload-artifact@v4
+        with:
+          name: motion-os-poc001-storyboard-NOT-FOR-PUBLICATION
+          path: apps/remotion-studio/out/motion-os-poc001-storyboard.mp4
+          retention-days: 7
+          if-no-files-found: error
