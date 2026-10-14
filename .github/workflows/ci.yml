@@ -25,6 +25,7 @@ jobs:
           node-version: 22
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm typecheck
+      - run: node --test tests/upload-motion-render-to-drive.test.mjs
       - run: pnpm installer:smoke
       - run: pnpm installer:package-smoke
       - run: pnpm tools:smoke
@@ -37,27 +38,4 @@ jobs:
       - run: pnpm render:scene
       - run: pnpm --filter @motion-agent/remotion-studio exec remotion still src/index.ts MotionScene out/motion-scene-still.png --frame=0 --props=jobs/scene-job.json
 
-      - name: Upload compact failure evidence
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: motion-agent-failure-evidence
-          path: |
-            apps/remotion-studio/out/motion-scene-still.png
-            apps/remotion-studio/out/qa/**/*
-          if-no-files-found: ignore
-          retention-days: 3
-
-      - name: Upload full preview bundle
-        if: always() && github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
-        with:
-          name: motion-agent-previews
-          path: |
-            apps/remotion-studio/out/motion-agent-demo.mp4
-            apps/remotion-studio/out/motion-job-preview.mp4
-            apps/remotion-studio/out/motion-scene.mp4
-            apps/remotion-studio/out/motion-scene-still.png
-            apps/remotion-studio/out/qa/qa_preview_smoke/**/*
-          if-no-files-found: warn
-          retention-days: 3
+      # Outputs stay on the runner only. No Actions Storage artifacts are retained.
