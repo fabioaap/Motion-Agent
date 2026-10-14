@@ -1,0 +1,61 @@
+{
+  "schema_version": "motion-job.v1",
+  "job_id": "sample_001",
+  "brand_id": "samplebrand",
+  "project_name": "Exemplo de job independente de Git",
+  "brief": {
+    "objective": "Apresentar um benefício verificável do produto",
+    "audience": "Público da marca",
+    "message": "Uma promessa demonstrável",
+    "cta": "Conheça o produto"
+  },
+  "deliverables": [
+    {
+      "aspect_ratio": "9:16",
+      "width": 1080,
+      "height": 1920,
+      "fps": 30,
+      "duration_seconds": 20
+    }
+  ],
+  "inputs": [
+    {
+      "role": "brand_logo",
+      "drive_file_id": "SUBSTITUA_PELO_ARQUIVO_ORIGINAL",
+      "mime_type": "image/png",
+      "rights_status": "owned",
+      "expected_version": "SUBSTITUA_PELA_VERSAO_NO_DRIVE"
+    }
+  ],
+  "brand": {
+    "drive_folder_id": "SUBSTITUA_PELA_PASTA_BRAND_KIT",
+    "logo_file_ids": [
+      "SUBSTITUA_PELO_ARQUIVO_ORIGINAL"
+    ],
+    "palette_reference": "Documento de identidade da marca",
+    "typography_reference": "Documento de identidade da marca"
+  },
+  "creative": {
+    "storyboard_required": true,
+    "narrative_idea": "Problema, solução e prova visual",
+    "motion_reference_ids": []
+  },
+  "engine": {
+    "preferred": "remotion",
+    "fallback_allowed": false
+  },
+  "approval": {
+    "storyboard_approved_by": null,
+    "storyboard_approved_at": null,
+    "final_approved_by": null,
+    "final_approved_at": null
+  },
+  "output": {
+    "drive_folder_id": "",
+    "preview_file_ids": [],
+    "final_file_ids": [],
+    "source_archive_id": null,
+    "QA_report_id": null
+  },
+  "state": "DRAFT"
+}
