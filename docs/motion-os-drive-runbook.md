@@ -67,6 +67,21 @@ O wrapper `bin/motion-drive-oauth.mjs` usa OAuth 2.0 com PKCE, abre um callback 
 
 **Limites:** O conector Google Drive do ChatGPT não entrega sua credencial OAuth ao Node externo. Para acesso sem humano no futuro, será necessário um executor com identidade de serviço e delegação explícita, ou outra integração segura aprovada. Nunca tente extrair o token do conector.
 
+## Pré-check fail-closed antes de renderizar (adicionado em 14/10/2026)
+
+Depois de executar `pull` com um job real e autenticação autorizada, o executor pode verificar o snapshot local antes de chamar qualquer engine:
+
+```powershell
+node bin/motion-drive.mjs pull --folder JOB_FOLDER_ID --out ./workspaces
+node bin/motion-job-preflight.mjs --workspace ./workspaces/SEU_JOB_ID --stage storyboard
+# Após aprovação humana real, usar --stage preview
+# Após QA, fonte editável e aprovação final, usar --stage final
+```
+
+O preflight exige um `motion-job.v1` válido, `audit.json` aprovado para o mesmo job, cobertura exata dos assets, nomes de arquivo seguros, checksum SHA-256 revalidado e aprovações humanas documentadas para os estágios `preview` e `final`. Ele não autentica no Google, não renderiza, não cria aprovações e não substitui o gate de revisão criativa. Os testes de regressão são executados em `.github/workflows/motion-os-drive.yml`.
+
+**Importante:** os workflows atuais de animatic técnico e Live Motion não consomem automaticamente esse preflight. Não confundir a existência desse comando e o sucesso dos testes offline com o pipeline end-to-end Drive-first. O próximo incremento do worker precisa encadear `pull → preflight → render` em um job de produção separado, depois de configurar OAuth e conferir originais da marca.
+
 ## Gates obrigatórios
 `push --stage storyboard` cria um artefato para aprovação. Só depois de aprovação humana identificada em `approve --stage storyboard` devem ocorrer preview e QA. O relatório de QA aprovado e o arquivo editável são exigidos antes de `approve --stage final` e `push --stage final`. Apenas quem revisou os materiais pode aprovar; não automatizar consentimento humano.
 
