@@ -14,7 +14,7 @@ import {createHash, randomBytes} from "node:crypto";
 import {createServer} from "node:http";
 import {spawn} from "node:child_process";
 import {dirname, join, resolve} from "node:path";
-import {fileURLToPath} from "node:url";
+import {fileURLToPath, pathToFileURL} from "node:url";
 const SELF = dirname(fileURLToPath(import.meta.url));
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -139,6 +139,6 @@ async function main(argv) {
     child.on("exit",(code) => code === 0 ? resolve() : reject(new Error("Motion Drive command exited with code " + code)));
   });
 }
-if (process.argv[1] && import.meta.url === new URL("file://" + resolve(process.argv[1])).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   main(process.argv.slice(2)).catch(e => {console.error("Motion OS OAuth: " + e.message); process.exitCode=1;});
 }
