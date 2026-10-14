@@ -1,0 +1,47 @@
+name: Motion OS Drive adapter tests
+
+on:
+  push:
+    branches:
+      - feat/aiox-motion-os-drive-first
+  pull_request:
+    paths:
+      - "bin/motion-drive.mjs"
+      - "bin/motion-drive-oauth.mjs"
+      - "tests/motion-drive.test.mjs"
+      - "bin/motion-job-preflight.mjs"
+      - "tests/motion-job-preflight.test.mjs"
+      - "tests/motion-drive-oauth.test.mjs"
+      - "scripts/upload-motion-render-to-drive.mjs"
+      - "tests/upload-motion-render-to-drive.test.mjs"
+      - ".github/workflows/motion-os-drive.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-adapter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate JavaScript syntax
+        run: |
+          node --check bin/motion-drive-oauth.mjs
+          node --check tests/motion-drive-oauth.test.mjs
+          node --check bin/motion-drive.mjs
+          node --check tests/motion-drive.test.mjs
+          node --check bin/motion-job-preflight.mjs
+          node --check tests/motion-job-preflight.test.mjs
+          node --check scripts/upload-motion-render-to-drive.mjs
+          node --check tests/upload-motion-render-to-drive.test.mjs
+      - name: Run Drive adapter, OAuth, preflight and delivery tests
+        run: node --test tests/motion-drive.test.mjs tests/motion-drive-oauth.test.mjs tests/motion-job-preflight.test.mjs tests/upload-motion-render-to-drive.test.mjs
+      - name: Check CLI doctor output without credentials
+        run: |
+          node bin/motion-drive.mjs doctor > doctor.json
+          node -e "const fs=require('fs'); const d=JSON.parse(fs.readFileSync('doctor.json')); if(!d.node.startsWith('v22.')) process.exit(1); if(d.drive_oauth_token_present) process.exit(2);"
