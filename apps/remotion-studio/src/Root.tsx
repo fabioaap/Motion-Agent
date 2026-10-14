@@ -8,6 +8,7 @@ import {
   type MotionJobPreviewProps
 } from "./MotionJobPreview";
 import {MotionScene} from "./MotionScene";
+import {MotionOsStoryboard} from "./MotionOsStoryboard";
 
 const defaultJobProps: MotionJobPreviewProps = {
   jobId: "motion_default",
@@ -103,6 +104,14 @@ const calculateSceneMetadata: CalculateMetadataFunction<MotionSceneJob> = ({prop
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      <Composition
+        id="MotionOsStoryboard"
+        component={MotionOsStoryboard}
+        durationInFrames={450}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
       <Composition
         id="MotionAgentDemo"
         component={MotionAgentDemo}
