@@ -69,6 +69,13 @@ jobs:
             out/motion-os-poc001-storyboard.mp4 \
             --scale="$SCALE" --concurrency=2
 
+      - name: Install FFmpeg and FFprobe for technical QA
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          ffprobe -version | head -n 1
+
       - name: Validate video and generate QA contact sheet
         shell: bash
         run: |
