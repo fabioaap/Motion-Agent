@@ -7,7 +7,9 @@ on:
   pull_request:
     paths:
       - "bin/motion-drive.mjs"
+      - "bin/motion-drive-oauth.mjs"
       - "tests/motion-drive.test.mjs"
+      - "tests/motion-drive-oauth.test.mjs"
       - ".github/workflows/motion-os-drive.yml"
   workflow_dispatch:
 
@@ -25,10 +27,12 @@ jobs:
           node-version: "22"
       - name: Validate JavaScript syntax
         run: |
+          node --check bin/motion-drive-oauth.mjs
+          node --check tests/motion-drive-oauth.test.mjs
           node --check bin/motion-drive.mjs
           node --check tests/motion-drive.test.mjs
       - name: Run Drive adapter unit and approval gate tests
-        run: node --test tests/motion-drive.test.mjs
+        run: node --test tests/motion-drive.test.mjs tests/motion-drive-oauth.test.mjs
       - name: Check CLI doctor output without credentials
         run: |
           node bin/motion-drive.mjs doctor > doctor.json
