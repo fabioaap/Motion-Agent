@@ -9,6 +9,8 @@ on:
       - "bin/motion-drive.mjs"
       - "bin/motion-drive-oauth.mjs"
       - "tests/motion-drive.test.mjs"
+      - "bin/motion-job-preflight.mjs"
+      - "tests/motion-job-preflight.test.mjs"
       - "tests/motion-drive-oauth.test.mjs"
       - "scripts/upload-motion-render-to-drive.mjs"
       - "tests/upload-motion-render-to-drive.test.mjs"
@@ -33,10 +35,12 @@ jobs:
           node --check tests/motion-drive-oauth.test.mjs
           node --check bin/motion-drive.mjs
           node --check tests/motion-drive.test.mjs
+          node --check bin/motion-job-preflight.mjs
+          node --check tests/motion-job-preflight.test.mjs
           node --check scripts/upload-motion-render-to-drive.mjs
           node --check tests/upload-motion-render-to-drive.test.mjs
-      - name: Run Drive adapter, OAuth and delivery tests
-        run: node --test tests/motion-drive.test.mjs tests/motion-drive-oauth.test.mjs tests/upload-motion-render-to-drive.test.mjs
+      - name: Run Drive adapter, OAuth, preflight and delivery tests
+        run: node --test tests/motion-drive.test.mjs tests/motion-drive-oauth.test.mjs tests/motion-job-preflight.test.mjs tests/upload-motion-render-to-drive.test.mjs
       - name: Check CLI doctor output without credentials
         run: |
           node bin/motion-drive.mjs doctor > doctor.json
